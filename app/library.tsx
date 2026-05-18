@@ -1,13 +1,6 @@
-import { Text } from "react-native";
+import { Redirect } from "expo-router";
 
-import { ScreenShell } from "../src/components/ScreenShell";
-
-export default function LibraryScreen() {
-  return (
-    <ScreenShell title="Library">
-      <Text style={{ color: "#B3B3B3" }}>
-        Browse artists, albums, and songs from your Navidrome collection.
-      </Text>
-    </ScreenShell>
-  );
+/** Legacy route — merged into the Library tab. */
+export default function LibraryRedirect() {
+  return <Redirect href="/(tabs)/library" />;
 }

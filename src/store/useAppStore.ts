@@ -1,17 +1,44 @@
-import create from "zustand";
+import { create } from "zustand";
 
-interface AppState {
+import { useEndpointStore } from "./useEndpointStore";
+
+/**
+ * UI-facing session facade. Source of truth: useEndpointStore + SecureStore.
+ */
+export interface AppState {
   isAuthenticated: boolean;
   username: string;
   serverUrl: string;
-  login: () => void;
-  logout: () => void;
+  serverLabel: string;
+  syncFromEndpointStore: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   isAuthenticated: false,
   username: "",
   serverUrl: "",
-  login: () => set({ isAuthenticated: true }),
-  logout: () => set({ isAuthenticated: false }),
+  serverLabel: "",
+
+  syncFromEndpointStore: () => {
+    const endpointState = useEndpointStore.getState();
+    const active = endpointState.getActiveEndpoint();
+
+    set({
+      isAuthenticated: endpointState.isSessionAuthenticated,
+      username: active?.username ?? "",
+      serverUrl: active?.baseUrl ?? "",
+      serverLabel: active?.label ?? "",
+    });
+  },
+
+  logout: async () => {
+    await useEndpointStore.getState().logout();
+    set({
+      isAuthenticated: false,
+      username: "",
+      serverUrl: "",
+      serverLabel: "",
+    });
+  },
 }));

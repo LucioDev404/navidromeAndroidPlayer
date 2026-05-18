@@ -5,34 +5,38 @@
     "version": "1.0.0",
     "scheme": "navidrome-player",
     "orientation": "portrait",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "android": {
       "package": "com.navidrome.player"
+    },
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#050505"
     },
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
+    "web": {
+      "bundler": "metro"
+    },
     "extra": {
       "apiBaseUrl": "https://your-navidrome-server.example.com"
     },
     "plugins": [
+      "expo-router",
       [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 33,
-            "targetSdkVersion": 33
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ]
   }
 }

@@ -1,50 +1,60 @@
 # Player Android
 
-A React Native / Expo migration of the Navidrome music streaming client.
+React Native / Expo Navidrome music client (TypeScript, Expo Router, Zustand).
 
-## Setup
+**Expo SDK 50** · local debug first · APK build via GitHub Actions (optional).
 
-1. Install Node.js 20+ and Expo CLI.
-2. Run `npm install`.
-3. Launch the app with `npm run start`.
-
-## Phase 1 status
-
-- Expo + TypeScript app shell created
-- Expo Router navigation pages added
-- Strict TypeScript enabled
-- Zustand store scaffolded
-- Navidrome API client scaffolded
-- GitHub Actions CI pipeline added
-- Legacy Flutter files removed
-
-## GitHub Actions CI/CD
-
-The project builds APKs **directly on GitHub Actions** (no EAS, no Expo cloud build limits).
-
-### What runs on each push/PR
-
-1. Lint and TypeScript check
-2. `expo prebuild` to generate the Android project
-3. Gradle `assembleRelease` to produce the APK
-4. Upload the APK as a workflow artifact (`app-apk`)
-
-### Download the APK
-
-After a workflow run completes:
-
-1. Open the workflow run on GitHub
-2. Scroll to **Artifacts**
-3. Download `app-apk` (contains `app-release.apk`)
-
-Artifacts are kept for 30 days.
-
-### Build locally (optional)
-
-Requires JDK 17 and the Android SDK:
+## Quick start
 
 ```bash
-npm run build:apk
+npm install
+npm run validate
+npm run web          # fastest: browser on PC
+# or
+npm start          # Expo Go / emulator menu
 ```
 
-The APK is written to `android/app/build/outputs/apk/release/app-release.apk`.
+## Scripts
+
+| Script                | Description                                       |
+| --------------------- | ------------------------------------------------- |
+| `npm start`           | Metro dev server                                  |
+| `npm run start:clear` | Metro with cache cleared                          |
+| `npm run web`         | Run in browser (PC debug)                         |
+| `npm run android`     | Open on Android emulator (Expo Go)                |
+| `npm run clean`       | Clear `.expo`, Metro cache, generated native dirs |
+| `npm run reset`       | Full reinstall                                    |
+| `npm run doctor`      | Expo compatibility (15 checks)                    |
+| `npm run validate`    | typecheck + lint + prettier                       |
+| `npm run build:apk`   | Generate Android project + release APK            |
+
+## Before every commit
+
+```bash
+npm run validate
+npm run doctor
+npm run web    # smoke test: login → home → logout
+```
+
+## Configuration
+
+Set your Navidrome server URL in `app.json`:
+
+```json
+"extra": {
+  "apiBaseUrl": "https://your-server.example.com"
+}
+```
+
+## CI
+
+GitHub Actions runs `validate` on every push/PR, then builds an APK artifact (`app-apk`). No EAS or Expo cloud build required.
+
+## Troubleshooting
+
+| Problem                      | Fix                                            |
+| ---------------------------- | ---------------------------------------------- |
+| Red screen / stale bundle    | `npm run start:clear`                          |
+| Weird native errors          | `npm run clean` then `npm start`               |
+| Dependency mismatch          | `npm run doctor` then `npx expo install --fix` |
+| `expo prebuild` broke `main` | `npm run post-prebuild-fix`                    |

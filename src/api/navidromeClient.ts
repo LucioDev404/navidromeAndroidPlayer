@@ -1,31 +1,18 @@
-import { env } from "../config/env";
+/**
+ * @deprecated Use SubsonicClient via useEndpointStore.getActiveClient() instead.
+ */
+import { SubsonicClient } from "./subsonic/client/SubsonicClient";
+import type { SubsonicResponseEnvelope } from "./subsonic/models/types";
 
-export interface NavidromeResponse<T> {
-  status: string;
-  version: string;
-  type: string;
-  result: T;
-}
+export type NavidromeResponse<T> = SubsonicResponseEnvelope<T>;
+
+export { SubsonicClient };
 
 export async function navidromeFetch<T>(
-  path: string,
-  options: RequestInit = {},
-) {
-  const url = `${env.apiBaseUrl}${path}`;
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const payload = await response.text();
-    throw new Error(`Navidrome request failed: ${response.status} ${payload}`);
-  }
-
-  const json = (await response.json()) as NavidromeResponse<T>;
-  return json.result;
+  _path: string,
+  _options: RequestInit = {},
+): Promise<T> {
+  throw new Error(
+    "navidromeFetch is deprecated. Use useEndpointStore.getActiveClient() for authenticated requests.",
+  );
 }
