@@ -3,7 +3,7 @@
     "name": "Navidrome Player",
     "slug": "navidrome-player-expo",
     "version": "1.0.0",
-    "sdkVersion": "48.0.0",
+    "scheme": "navidrome-player",
     "orientation": "portrait",
     "platforms": [
       "ios",
@@ -14,17 +14,25 @@
       "package": "com.navidrome.player"
     },
     "updates": {
+      "enabled": false,
       "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "extra": {
-      "apiBaseUrl": "https://your-navidrome-server.example.com",
-      "eas": {
-        "projectId": "0358077d-7fb5-4b7a-a3ab-baa579cd9266"
-      }
+      "apiBaseUrl": "https://your-navidrome-server.example.com"
     },
-    "owner": "luciodev404"
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33
+          }
+        }
+      ]
+    ]
   }
 }
