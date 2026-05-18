@@ -39,7 +39,7 @@ class BottomNavShell extends StatelessWidget {
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
-                child: BlurCard(
+                child: const BlurCard(
                   child: NavigationBar(
                     height: 72,
                     selectedIndex: currentIndex,

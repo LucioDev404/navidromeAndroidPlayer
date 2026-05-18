@@ -78,11 +78,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: state.isLoading ? null : () async {
+                                final router = GoRouter.of(context);
                                 if (_formKey.currentState?.validate() != true) return;
                                 final success = await ref.read(loginControllerProvider.notifier).submit();
                                 if (!mounted) return;
                                 if (success) {
-                                  context.go('/home');
+                                  router.go('/home');
                                 }
                               },
                               child: state.isLoading

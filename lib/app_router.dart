@@ -26,17 +26,17 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/home',
           name: 'home',
-          pageBuilder: (context, state) => NoTransitionPage(child: const HomeScreen()),
+          pageBuilder: (context, state) => const NoTransitionPage(child: HomeScreen()),
         ),
         GoRoute(
           path: '/library',
           name: 'library',
-          pageBuilder: (context, state) => NoTransitionPage(child: const LibraryScreen()),
+          pageBuilder: (context, state) => const NoTransitionPage(child: LibraryScreen()),
         ),
         GoRoute(
           path: '/search',
           name: 'search',
-          pageBuilder: (context, state) => NoTransitionPage(child: const SearchScreen()),
+          pageBuilder: (context, state) => const NoTransitionPage(child: SearchScreen()),
         ),
       ],
     ),

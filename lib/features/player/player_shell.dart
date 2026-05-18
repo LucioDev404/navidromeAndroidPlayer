@@ -15,9 +15,9 @@ class PlayerShell extends StatelessWidget {
         child: Container(
           height: 130,
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.all(Radius.circular(AppSizes.borderRadius)),
+            borderRadius: BorderRadius.circular(AppSizes.borderRadius),
           ),
           child: Row(
             children: [

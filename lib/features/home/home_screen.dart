@@ -20,26 +20,19 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 28),
                 Text('Good evening', style: Theme.of(context).textTheme.displaySmall),
                 const SizedBox(height: 16),
-                Text('Your music, beautifully organised.', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.surfaceText)),
+                Text(
+                  'Your music, beautifully organised.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.surfaceText),
+                ),
                 const SizedBox(height: 28),
               ],
             ),
           ),
-          SliverToBoxAdapter(
-            child: _SectionCard(title: 'Recently played'),
-          ),
-          SliverToBoxAdapter(
-            child: const SizedBox(height: AppSizes.sectionSpacing),
-          ),
-          SliverToBoxAdapter(
-            child: _SectionCard(title: 'Recommended albums'),
-          ),
-          SliverToBoxAdapter(
-            child: const SizedBox(height: AppSizes.sectionSpacing),
-          ),
-          SliverToBoxAdapter(
-            child: _SectionCard(title: 'Fresh finds'),
-          ),
+          const SliverToBoxAdapter(child: _SectionCard(title: 'Recently played')),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSizes.sectionSpacing)),
+          const SliverToBoxAdapter(child: _SectionCard(title: 'Recommended albums')),
+          const SliverToBoxAdapter(child: SizedBox(height: AppSizes.sectionSpacing)),
+          const SliverToBoxAdapter(child: _SectionCard(title: 'Fresh finds')),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -63,10 +56,10 @@ class _SectionCard extends StatelessWidget {
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Row(
-              children: [
-                _AlbumTile(label: 'Today', color: const Color(0xFF515A6B)),
-                const SizedBox(width: 12),
-                _AlbumTile(label: 'Discover', color: const Color(0xFF1DB954)),
+              children: const [
+                _AlbumTile(label: 'Today', color: Color(0xFF515A6B)),
+                SizedBox(width: 12),
+                _AlbumTile(label: 'Discover', color: Color(0xFF1DB954)),
               ],
             ),
           ],
@@ -89,7 +82,7 @@ class _AlbumTile extends StatelessWidget {
         height: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(colors: [color.withOpacity(0.95), color.withOpacity(0.65)]),
+          gradient: LinearGradient(colors: [color.withAlpha(242), color.withAlpha(166)]),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
