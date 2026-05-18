@@ -1,9 +1,0 @@
-include: package:flutter_lints/flutter.yaml
-
-linter:
-  rules:
-    avoid_print: true
-    prefer_const_constructors: true
-    prefer_final_fields: true
-    prefer_final_locals: true
-    avoid_positional_boolean_parameters: true

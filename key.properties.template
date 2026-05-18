@@ -1,7 +1,0 @@
-# Local Android signing configuration.
-# Copy this file to android/key.properties and do not commit the actual file.
-
-storePassword=YOUR_KEYSTORE_PASSWORD
-keyPassword=YOUR_KEY_PASSWORD
-keyAlias=YOUR_KEY_ALIAS
-storeFile=upload-keystore.jks

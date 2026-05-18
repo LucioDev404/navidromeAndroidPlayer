@@ -1,34 +1,36 @@
-# Flutter/Dart
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.flutter-version
+# Expo / React Native
+node_modules/
+.expo/
+.expo-shared/
+web-build/
+*.log
 
-# IntelliJ
+# Editor directories and files
+.vscode/
 *.iml
 .idea/
-
-# VS Code
-.vscode/
 
 # macOS
 .DS_Store
 
-# Android Studio
-*.iml
-.idea/
-
-# Caches
-**/logs/
-**/temp/
-**/tmp/
-
-# Android signing and local secret files
-android/key.properties
-android/app/upload-keystore.jks
+# Local secrets
 *.jks
 *.keystore
+android/key.properties
+android/app/upload-keystore.jks
+
+# Expo / React Native
+node_modules/
+.expo/
+.expo-shared/
+web-build/
+*.log
+!.github/**
+
+# Expo / React Native
+node_modules/
+.expo/
+.expo-shared/
+web-build/
+*.log
+!.github/**

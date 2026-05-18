@@ -1,19 +1,19 @@
 # Player Android
 
-A modern self-hosted Navidrome music client built with Flutter.
+A React Native / Expo migration of the Navidrome music streaming client.
 
 ## Setup
 
-1. Install Flutter 3.0+ and Android tooling.
-2. Run `flutter pub get`.
-3. Launch the app with `flutter run`.
+1. Install Node.js 20+ and Expo CLI.
+2. Run `npm install`.
+3. Launch the app with `npm run start`.
 
-## Features included in Step 1
+## Phase 1 status
 
-- Material 3 dark theme
-- Riverpod state management
-- GoRouter navigation
-- Splash screen
-- Login screen
-- Bottom navigation shell
-- Reusable blur and gradient widgets
+- Expo + TypeScript app shell created
+- Expo Router navigation pages added
+- Strict TypeScript enabled
+- Zustand store scaffolded
+- Navidrome API client scaffolded
+- GitHub Actions CI pipeline added
+- Legacy Flutter files removed
