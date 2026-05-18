@@ -17,3 +17,28 @@ A React Native / Expo migration of the Navidrome music streaming client.
 - Navidrome API client scaffolded
 - GitHub Actions CI pipeline added
 - Legacy Flutter files removed
+
+## GitHub Actions CI/CD
+
+The project includes automated CI/CD that builds and exports APKs.
+
+### Setup steps
+
+1. Create an Expo account at https://expo.dev and generate a personal access token.
+2. In your GitHub repository, add a secret:
+   - Go to **Settings > Secrets and variables > Actions**
+   - Add `EXPO_TOKEN` with your Expo personal access token
+3. Commit and push to `main` or a PR branch.
+4. GitHub Actions will:
+   - Run lint and typecheck
+   - Build an APK using EAS Build
+   - Upload the APK as a downloadable artifact
+
+### Download APK from GitHub Actions
+
+After a workflow run completes:
+1. Go to the workflow run page
+2. Scroll to **Artifacts** section
+3. Download `app-apk` (contains the built APK file)
+
+The APK is retained for 30 days.
