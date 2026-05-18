@@ -25,7 +25,7 @@ class BottomNavShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
+    final location = GoRouter.of(context).location;
     final currentIndex = _activeIndex(location);
 
     return GradientBackground(

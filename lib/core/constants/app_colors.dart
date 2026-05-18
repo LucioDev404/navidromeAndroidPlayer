@@ -14,4 +14,5 @@ class AppColors {
   static const Color surfaceText = Color(0xFF8A94A6);
   static const Color shimmer = Color(0xFF2D3747);
   static const Color lightBackground = Color(0xFFF5F7FA);
+  static const Color lightSurface = Color(0xFFFFFFFF);
 }

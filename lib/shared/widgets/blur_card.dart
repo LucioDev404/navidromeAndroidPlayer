@@ -18,9 +18,9 @@ class BlurCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.72),
+            color: AppColors.surface.withAlpha(184),
             borderRadius: BorderRadius.circular(AppSizes.borderRadius),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withAlpha(13)),
           ),
           child: child,
         ),

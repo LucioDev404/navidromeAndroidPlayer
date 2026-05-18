@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../login/login_controller.dart';
-import '../login/login_repository.dart';
-import '../../../core/providers.dart';
 import '../../../shared/widgets/gradient_background.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -91,7 +89,7 @@ class _SplashArtwork extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(
-              colors: [AppColors.accent.withOpacity(0.28), Colors.transparent],
+              colors: [AppColors.accent.withAlpha(72), Colors.transparent],
               radius: 0.7,
             ),
           ),
@@ -108,7 +106,7 @@ class _SplashArtwork extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.accent.withOpacity(0.24),
+                color: AppColors.accent.withAlpha(61),
                 blurRadius: 32,
                 offset: const Offset(0, 18),
               ),
