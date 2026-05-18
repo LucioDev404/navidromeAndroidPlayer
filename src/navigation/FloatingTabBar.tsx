@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { BlurView } from "expo-blur";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { memo } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -9,6 +9,7 @@ import {
   FLOATING_TAB_BAR_HEIGHT,
   FLOATING_TAB_BAR_HORIZONTAL_MARGIN,
 } from "./layoutMetrics";
+import { GlassSurface } from "../components/ui/GlassSurface";
 import { authColors, authRadii } from "../theme/authTheme";
 
 type TabKey = "library" | "search" | "player" | "account";
@@ -30,7 +31,7 @@ function resolveTabKey(routeName: string): TabKey | null {
   return null;
 }
 
-export function FloatingTabBar({
+function FloatingTabBarComponent({
   state,
   descriptors,
   navigation,
@@ -48,11 +49,7 @@ export function FloatingTabBar({
       ]}
       pointerEvents="box-none"
     >
-      <BlurView
-        intensity={Platform.OS === "ios" ? 72 : 48}
-        tint="dark"
-        style={styles.bar}
-      >
+      <GlassSurface style={styles.bar}>
         <View style={styles.barInner}>
           {state.routes.map((route, index) => {
             const tabKey = resolveTabKey(route.name);
@@ -76,13 +73,6 @@ export function FloatingTabBar({
               }
             };
 
-            const onLongPress = () => {
-              navigation.emit({
-                type: "tabLongPress",
-                target: route.key,
-              });
-            };
-
             return (
               <Pressable
                 key={route.key}
@@ -92,7 +82,6 @@ export function FloatingTabBar({
                   options.tabBarAccessibilityLabel ?? config.label
                 }
                 onPress={onPress}
-                onLongPress={onLongPress}
                 style={styles.tab}
               >
                 <Ionicons
@@ -109,7 +98,7 @@ export function FloatingTabBar({
             );
           })}
         </View>
-      </BlurView>
+      </GlassSurface>
     </View>
   );
 }
@@ -151,3 +140,5 @@ const styles = StyleSheet.create({
     color: authColors.accent,
   },
 });
+
+export const FloatingTabBar = memo(FloatingTabBarComponent);

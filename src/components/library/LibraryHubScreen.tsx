@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -17,9 +17,10 @@ import { LibrarySkeleton } from "./LibrarySkeleton";
 import { MediaCarousel } from "./MediaCarousel";
 import type { Song } from "../../api/models/media";
 import { getScrollBottomInset } from "../../navigation/layoutMetrics";
+import { usePlayerActions } from "../../store/playerSelectors";
 import { useEndpointStore } from "../../store/useEndpointStore";
 import useLibraryStore from "../../store/useLibraryStore";
-import { usePlayerStore } from "../../store/usePlayerStore";
+import { useRecentlyPlayedStore } from "../../store/useRecentlyPlayedStore";
 import { authColors, authSpacing } from "../../theme/authTheme";
 import { AuthGradientBackground } from "../auth/AuthGradientBackground";
 import { SessionBanner } from "../auth/SessionBanner";
@@ -46,22 +47,27 @@ export function LibraryHubScreen() {
   const isLoading = useLibraryStore((s) => s.isLoading);
   const lastError = useLibraryStore((s) => s.lastError);
   const loadLibrary = useLibraryStore((s) => s.loadLibrary);
-  const playSong = usePlayerStore((s) => s.playSong);
+  const { playSong } = usePlayerActions();
 
-  const hasMiniPlayer = usePlayerStore((s) => Boolean(s.currentSong));
-  const bottomInset = getScrollBottomInset(insets.bottom, {
-    hasMiniPlayer,
-  });
+  const recentlyPlayed = useRecentlyPlayedStore((s) =>
+    s.entries.map((entry) => entry.song),
+  );
 
-  const isEmptyLibrary =
-    library.albums.length === 0 &&
-    library.artists.length === 0 &&
-    library.songs.length === 0 &&
-    !isLoading;
+  const bottomInset = useMemo(
+    () =>
+      getScrollBottomInset(insets.bottom, {
+        hasMiniPlayer: true,
+        showTabBar: true,
+      }),
+    [insets.bottom],
+  );
 
-  const handleSongPress = (item: Song) => {
-    playSong(item, library.songs.length ? library.songs : [item]);
-  };
+  const handleSongPress = useCallback(
+    (item: Song) => {
+      playSong(item, library.songs.length ? library.songs : [item]);
+    },
+    [library.songs, playSong],
+  );
 
   const sections = useMemo(() => {
     const show = (keys: LibraryFilter[]) =>
@@ -75,6 +81,12 @@ export function LibraryHubScreen() {
       showPlaylists: show(["all", "playlists"]),
     };
   }, [filter]);
+
+  const isEmptyLibrary =
+    library.albums.length === 0 &&
+    library.artists.length === 0 &&
+    library.songs.length === 0 &&
+    !isLoading;
 
   return (
     <AuthGradientBackground>
@@ -125,7 +137,7 @@ export function LibraryHubScreen() {
           <>
             <MediaCarousel
               title="Recently Played"
-              items={library.recentlyPlayed}
+              items={recentlyPlayed}
               variant="song"
               onPressItem={(item) => handleSongPress(item as Song)}
             />

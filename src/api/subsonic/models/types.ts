@@ -9,6 +9,8 @@ export interface NavidromeEndpoint {
   label: string;
   baseUrl: string;
   username: string;
+  /** True when server uses http:// (LAN / self-hosted). */
+  allowInsecureConnection?: boolean;
   createdAt: string;
   lastConnectedAt?: string;
   connectionStatus: ConnectionHealthStatus;
@@ -52,6 +54,8 @@ export interface CreateEndpointInput {
   baseUrl: string;
   username: string;
   password: string;
+  /** Explicit opt-in for http:// servers (defaults to true in __DEV__). */
+  allowInsecureConnection?: boolean;
 }
 
 export interface UpdateEndpointInput {
@@ -59,4 +63,5 @@ export interface UpdateEndpointInput {
   baseUrl?: string;
   username?: string;
   password?: string;
+  allowInsecureConnection?: boolean;
 }

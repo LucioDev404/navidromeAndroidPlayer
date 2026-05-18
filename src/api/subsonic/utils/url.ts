@@ -6,19 +6,36 @@ export interface NormalizedServerUrl {
   usesHttps: boolean;
 }
 
-export function normalizeServerUrl(rawUrl: string): NormalizedServerUrl {
+export interface NormalizeServerUrlOptions {
+  /** When true, HTTP URLs are allowed (required for LAN/self-hosted). Defaults to __DEV__. */
+  allowInsecure?: boolean;
+}
+
+/**
+ * Normalize Navidrome/Subsonic base URL.
+ * In development, HTTP is allowed by default for self-hosted servers.
+ */
+export function normalizeServerUrl(
+  rawUrl: string,
+  options?: NormalizeServerUrlOptions,
+): NormalizedServerUrl {
   const trimmed = rawUrl.trim();
   if (!trimmed) {
     throw new SubsonicApiError("INVALID_URL", "Server URL is required.");
   }
 
+  const allowInsecure = options?.allowInsecure ?? __DEV__;
+  const defaultProtocol = allowInsecure ? "http:" : "https:";
+
   let parsed: URL;
   try {
-    parsed = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+    parsed = new URL(
+      trimmed.includes("://") ? trimmed : `${defaultProtocol}//${trimmed}`,
+    );
   } catch {
     throw new SubsonicApiError(
       "INVALID_URL",
-      "Server URL is malformed. Example: https://music.example.com",
+      "Server URL is malformed. Example: http://192.168.1.10:4533",
     );
   }
 
@@ -31,10 +48,10 @@ export function normalizeServerUrl(rawUrl: string): NormalizedServerUrl {
 
   const usesHttps = parsed.protocol === "https:";
 
-  if (!usesHttps && !__DEV__) {
+  if (!usesHttps && !allowInsecure) {
     throw new SubsonicApiError(
       "INSECURE_URL",
-      "HTTPS is required for production. Use an https:// server URL.",
+      "HTTP is not allowed for this server. Enable “Allow HTTP” or use https://.",
     );
   }
 

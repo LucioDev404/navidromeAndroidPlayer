@@ -28,13 +28,15 @@ export function buildEndpointFromInput(
   input: CreateEndpointInput,
   ping: SubsonicPingResult,
 ): NavidromeEndpoint {
-  const normalized = normalizeServerUrl(input.baseUrl);
+  const allowInsecure = input.allowInsecureConnection ?? __DEV__;
+  const normalized = normalizeServerUrl(input.baseUrl, { allowInsecure });
 
   return {
     id: createEndpointId(),
     label: sanitizeLabel(input.label),
     baseUrl: normalized.origin,
     username: sanitizeUsername(input.username),
+    allowInsecureConnection: !normalized.usesHttps,
     createdAt: new Date().toISOString(),
     lastConnectedAt: new Date().toISOString(),
     connectionStatus: ping.status === "ok" ? "healthy" : "unhealthy",
@@ -61,7 +63,8 @@ export async function validateAndTestEndpoint(
     throw new SubsonicApiError("INVALID_CREDENTIALS", "Password is required.");
   }
 
-  const normalized = normalizeServerUrl(input.baseUrl);
+  const allowInsecure = input.allowInsecureConnection ?? __DEV__;
+  const normalized = normalizeServerUrl(input.baseUrl, { allowInsecure });
   const credentials: EndpointCredentials = { username, password };
 
   safeLog("info", "Validating Navidrome endpoint", {
@@ -96,6 +99,7 @@ export async function testExistingEndpoint(
   const client = new SubsonicClient({
     baseUrl: endpoint.baseUrl,
     credentials,
+    allowInsecure: endpoint.allowInsecureConnection ?? __DEV__,
   });
 
   return client.ping(signal);

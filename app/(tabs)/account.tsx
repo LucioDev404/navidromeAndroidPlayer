@@ -22,6 +22,7 @@ import {
   useAuthLoading,
   useIsAuthenticated,
 } from "../../src/store/useAuthStore";
+import { useBrowseStore } from "../../src/store/useBrowseStore";
 import { useEndpointStore } from "../../src/store/useEndpointStore";
 import useLibraryStore from "../../src/store/useLibraryStore";
 import { usePlayerStore } from "../../src/store/usePlayerStore";
@@ -257,6 +258,7 @@ export default function AccountTabScreen() {
                 logout()
                   .then(() => {
                     useLibraryStore.getState().clear();
+                    useBrowseStore.getState().clear();
                     clearPlayer();
                     router.replace("/login");
                   })

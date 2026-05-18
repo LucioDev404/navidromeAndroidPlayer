@@ -7,7 +7,8 @@
     "orientation": "portrait",
     "platforms": ["ios", "android", "web"],
     "android": {
-      "package": "com.navidrome.player"
+      "package": "com.navidrome.player",
+      "usesCleartextTraffic": true
     },
     "splash": {
       "resizeMode": "contain",
@@ -32,11 +33,20 @@
           "android": {
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
+            "buildToolsVersion": "34.0.0",
+            "usesCleartextTraffic": true
+          },
+          "ios": {
+            "infoPlist": {
+              "NSAppTransportSecurity": {
+                "NSAllowsLocalNetworking": true
+              }
+            }
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-av"
     ]
   }
 }

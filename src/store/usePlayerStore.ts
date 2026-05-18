@@ -1,62 +1,170 @@
 import { create } from "zustand";
 
 import type { Song } from "../api/models/media";
+import { PlaybackController } from "../services/audio/PlaybackController";
+import { QueueManager } from "../services/audio/QueueManager";
+import type {
+  PlaybackQueue,
+  PlaybackStatus,
+  QueueContext,
+} from "../services/audio/types";
 
 interface PlayerState {
   currentSong: Song | null;
   queue: Song[];
+  activeIndex: number;
+  queueContext: QueueContext | null;
   isPlaying: boolean;
-  isExpanded: boolean;
-  playSong: (song: Song, queue?: Song[]) => void;
+  status: PlaybackStatus;
+  positionMillis: number;
+  durationMillis: number;
+  playbackError: string | null;
+
+  applyQueue: (
+    queue: PlaybackQueue,
+    patch?: Partial<{
+      isPlaying: boolean;
+      status: PlaybackStatus;
+      playbackError: string | null;
+      positionMillis: number;
+      durationMillis: number;
+      queueContext: QueueContext | null;
+    }>,
+  ) => void;
+  patchPlayback: (
+    patch: Partial<{
+      isPlaying: boolean;
+      status: PlaybackStatus;
+      playbackError: string | null;
+      positionMillis: number;
+      durationMillis: number;
+    }>,
+  ) => void;
+  resetPlayback: () => void;
+
+  playSong: (song: Song, queue?: Song[], context?: QueueContext | null) => void;
+  playQueue: (
+    songs: Song[],
+    startIndex?: number,
+    context?: QueueContext | null,
+  ) => void;
+  playQueueIndex: (index: number) => void;
   togglePlay: () => void;
   playNext: () => void;
-  setExpanded: (expanded: boolean) => void;
+  playPrevious: () => void;
+  seekTo: (positionMillis: number) => void;
+  retryPlayback: () => void;
   clear: () => void;
 }
 
-export const usePlayerStore = create<PlayerState>((set, get) => ({
-  currentSong: null,
-  queue: [],
+const INITIAL_STATE = {
+  currentSong: null as Song | null,
+  queue: [] as Song[],
+  activeIndex: 0,
+  queueContext: null as QueueContext | null,
   isPlaying: false,
-  isExpanded: false,
+  status: "idle" as PlaybackStatus,
+  positionMillis: 0,
+  durationMillis: 0,
+  playbackError: null as string | null,
+};
 
-  playSong: (song, queue) => {
-    const nextQueue = queue?.length ? queue : [song];
+export const usePlayerStore = create<PlayerState>((set, get) => ({
+  ...INITIAL_STATE,
+
+  applyQueue: (queue, patch) => {
+    const track = QueueManager.getCurrentTrack(queue);
     set({
-      currentSong: song,
-      queue: nextQueue,
-      isPlaying: true,
-      isExpanded: false,
+      currentSong: track,
+      queue: queue.tracks,
+      activeIndex: queue.activeIndex,
+      queueContext: patch?.queueContext ?? get().queueContext,
+      playbackError: patch?.playbackError ?? null,
+      isPlaying: patch?.isPlaying ?? get().isPlaying,
+      status: patch?.status ?? get().status,
+      positionMillis: patch?.positionMillis ?? 0,
+      durationMillis:
+        patch?.durationMillis ?? (track?.duration ? track.duration * 1000 : 0),
+    });
+  },
+
+  patchPlayback: (patch) => {
+    set((state) => ({
+      ...state,
+      ...patch,
+    }));
+  },
+
+  resetPlayback: () => {
+    set({ ...INITIAL_STATE });
+  },
+
+  playSong: (song, queue, context) => {
+    PlaybackController.playSong(song, queue, context).catch((error) => {
+      const message =
+        error instanceof Error ? error.message : "Playback failed";
+      get().patchPlayback({
+        status: "error",
+        isPlaying: false,
+        playbackError: message,
+      });
+    });
+  },
+
+  playQueue: (songs, startIndex = 0, context) => {
+    PlaybackController.playQueue(songs, startIndex, context).catch((error) => {
+      const message =
+        error instanceof Error ? error.message : "Playback failed";
+      get().patchPlayback({
+        status: "error",
+        isPlaying: false,
+        playbackError: message,
+      });
+    });
+  },
+
+  playQueueIndex: (index) => {
+    PlaybackController.playQueueIndex(index).catch((error) => {
+      const message =
+        error instanceof Error ? error.message : "Playback failed";
+      get().patchPlayback({
+        status: "error",
+        isPlaying: false,
+        playbackError: message,
+      });
     });
   },
 
   togglePlay: () => {
-    if (!get().currentSong) {
-      return;
-    }
-    set((state) => ({ isPlaying: !state.isPlaying }));
+    PlaybackController.togglePlay().catch((error) => {
+      const message =
+        error instanceof Error ? error.message : "Playback failed";
+      get().patchPlayback({ status: "error", playbackError: message });
+    });
   },
 
   playNext: () => {
-    const { queue, currentSong } = get();
-    if (!currentSong || queue.length === 0) {
-      return;
-    }
-
-    const index = queue.findIndex((item) => item.id === currentSong.id);
-    const next = queue[index + 1] ?? queue[0];
-    set({ currentSong: next, isPlaying: true });
+    PlaybackController.playNext().catch(() => undefined);
   },
 
-  setExpanded: (expanded) => set({ isExpanded: expanded }),
+  playPrevious: () => {
+    PlaybackController.playPrevious().catch(() => undefined);
+  },
 
-  clear: () =>
-    set({
-      currentSong: null,
-      queue: [],
-      isPlaying: false,
-      isExpanded: false,
-    }),
+  seekTo: (positionMillis) => {
+    PlaybackController.seekTo(positionMillis).catch(() => undefined);
+  },
+
+  retryPlayback: () => {
+    PlaybackController.retryCurrent().catch((error) => {
+      const message = error instanceof Error ? error.message : "Retry failed";
+      get().patchPlayback({ status: "error", playbackError: message });
+    });
+  },
+
+  clear: () => {
+    PlaybackController.clear().catch(() => undefined);
+  },
 }));
 
 export default usePlayerStore;

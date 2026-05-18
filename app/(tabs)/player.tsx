@@ -1,24 +1,28 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
 import { AuthPrimaryButton } from "../../src/components/auth/AuthPrimaryButton";
+import { PlayerControls } from "../../src/components/player/PlayerControls";
+import { PlayerErrorBoundary } from "../../src/components/player/PlayerErrorBoundary";
+import { PlayerTrackHeader } from "../../src/components/player/PlayerTrackHeader";
+import { SeekBar } from "../../src/components/player/SeekBar";
 import { getScrollBottomInset } from "../../src/navigation/layoutMetrics";
+import { openFullPlayer } from "../../src/navigation/navigationHelpers";
+import {
+  useCurrentSong,
+  useQueueLength,
+} from "../../src/store/playerSelectors";
 import { useIsAuthenticated } from "../../src/store/useAuthStore";
-import { usePlayerStore } from "../../src/store/usePlayerStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
 export default function PlayerTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
-  const currentSong = usePlayerStore((s) => s.currentSong);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const togglePlay = usePlayerStore((s) => s.togglePlay);
-  const playNext = usePlayerStore((s) => s.playNext);
-  const queue = usePlayerStore((s) => s.queue);
+  const currentSong = useCurrentSong();
+  const queueLength = useQueueLength();
 
   if (!isAuthenticated) {
     return null;
@@ -26,9 +30,10 @@ export default function PlayerTabScreen() {
 
   return (
     <AuthGradientBackground>
-      <View
-        style={[
-          styles.container,
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
           {
             paddingTop: insets.top + authSpacing.lg,
             paddingBottom: getScrollBottomInset(insets.bottom, {
@@ -36,72 +41,46 @@ export default function PlayerTabScreen() {
             }),
           },
         ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>Now Playing</Text>
 
-        {!currentSong ? (
-          <View style={styles.empty}>
-            <Ionicons
-              name="musical-notes"
-              size={56}
-              color={authColors.textMuted}
-            />
-            <Text style={styles.emptyTitle}>Nothing playing</Text>
-            <Text style={styles.emptyBody}>
-              Pick a song from your Library or Search to start listening.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {currentSong.coverArtUrl ? (
-              <Image
-                source={{ uri: currentSong.coverArtUrl }}
-                style={styles.art}
-              />
-            ) : (
-              <View style={[styles.art, styles.artPlaceholder]} />
-            )}
-            <Text style={styles.songTitle}>{currentSong.title}</Text>
-            <Text style={styles.songArtist}>{currentSong.artist}</Text>
-            <Text style={styles.songAlbum}>{currentSong.album}</Text>
-
-            <View style={styles.controls}>
-              <Pressable onPress={togglePlay} style={styles.controlButton}>
-                <Ionicons
-                  name={isPlaying ? "pause-circle" : "play-circle"}
-                  size={64}
-                  color={authColors.accent}
-                />
-              </Pressable>
-              <Pressable onPress={playNext} style={styles.controlButton}>
-                <Ionicons
-                  name="play-skip-forward"
-                  size={32}
-                  color={authColors.textPrimary}
-                />
-              </Pressable>
+        <PlayerErrorBoundary>
+          {!currentSong ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>Nothing playing</Text>
+              <Text style={styles.emptyBody}>
+                Pick a song from your Library, an album page, or Search.
+              </Text>
             </View>
-
-            <Text style={styles.queueLabel}>
-              Up next · {queue.length} tracks
-            </Text>
-          </>
-        )}
+          ) : (
+            <>
+              <PlayerTrackHeader song={currentSong} artSize={260} />
+              <SeekBar />
+              <PlayerControls />
+              <Text style={styles.queueLabel}>
+                Up next · {queueLength} tracks
+              </Text>
+            </>
+          )}
+        </PlayerErrorBoundary>
 
         <AuthPrimaryButton
           label="Open full player"
           variant="secondary"
-          onPress={() => router.push("/player")}
+          onPress={() => openFullPlayer(router)}
           style={styles.fullPlayerButton}
         />
-      </View>
+      </ScrollView>
     </AuthGradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scroll: { flex: 1 },
+  content: {
+    flexGrow: 1,
     paddingHorizontal: authSpacing.lg,
   },
   title: {
@@ -111,16 +90,14 @@ const styles = StyleSheet.create({
     marginBottom: authSpacing.lg,
   },
   empty: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    gap: authSpacing.sm,
-    paddingBottom: authSpacing.xl,
+    paddingVertical: authSpacing.xl,
   },
   emptyTitle: {
     color: authColors.textPrimary,
     fontSize: 20,
     fontWeight: "700",
+    marginBottom: authSpacing.sm,
   },
   emptyBody: {
     color: authColors.textSecondary,
@@ -128,46 +105,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     maxWidth: 280,
   },
-  art: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 12,
-    marginBottom: authSpacing.lg,
-  },
-  artPlaceholder: {
-    backgroundColor: authColors.surfaceHighlight,
-  },
-  songTitle: {
-    color: authColors.textPrimary,
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  songArtist: {
-    color: authColors.textSecondary,
-    fontSize: 16,
-    marginTop: 6,
-  },
-  songAlbum: {
-    color: authColors.textMuted,
-    fontSize: 14,
-    marginTop: 4,
-    marginBottom: authSpacing.lg,
-  },
-  controls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: authSpacing.lg,
-    marginBottom: authSpacing.lg,
-  },
-  controlButton: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
   queueLabel: {
     color: authColors.textSecondary,
     marginBottom: authSpacing.lg,
   },
   fullPlayerButton: {
-    marginTop: "auto",
+    marginTop: authSpacing.md,
   },
 });

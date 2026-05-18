@@ -3,9 +3,9 @@ import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { FloatingTabBar } from "../../src/navigation/FloatingTabBar";
-import { MiniPlayer } from "../../src/navigation/MiniPlayer";
 import { useIsAuthenticated } from "../../src/store/useAuthStore";
 import useLibraryStore from "../../src/store/useLibraryStore";
+import { isWeb } from "../../src/utils/platform";
 
 export default function MainTabsLayout() {
   const isAuthenticated = useIsAuthenticated();
@@ -25,6 +25,8 @@ export default function MainTabsLayout() {
         screenOptions={{
           headerShown: false,
           lazy: true,
+          // Web: freeze when mounting every tab at once
+          unmountOnBlur: isWeb,
         }}
       >
         <Tabs.Screen
@@ -52,7 +54,6 @@ export default function MainTabsLayout() {
           }}
         />
       </Tabs>
-      <MiniPlayer />
     </View>
   );
 }

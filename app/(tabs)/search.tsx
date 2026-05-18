@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useRouter } from "expo-router";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -12,30 +12,31 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
+import { CachedCover } from "../../src/components/ui/CachedCover";
 import { getScrollBottomInset } from "../../src/navigation/layoutMetrics";
+import { openAlbum, openArtist } from "../../src/navigation/navigationHelpers";
+import { usePlayerActions } from "../../src/store/playerSelectors";
 import { useIsAuthenticated } from "../../src/store/useAuthStore";
-import { usePlayerStore } from "../../src/store/usePlayerStore";
 import { useSearchStore } from "../../src/store/useSearchStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
-function ResultRow({
-  title,
-  subtitle,
-  coverUrl,
-  onPress,
-}: {
+type SearchRow = {
+  key: string;
   title: string;
   subtitle: string;
   coverUrl?: string;
   onPress: () => void;
-}) {
+};
+
+const SearchResultRow = memo(function SearchResultRow({
+  title,
+  subtitle,
+  coverUrl,
+  onPress,
+}: Omit<SearchRow, "key">) {
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      {coverUrl ? (
-        <Image source={{ uri: coverUrl }} style={styles.thumb} />
-      ) : (
-        <View style={[styles.thumb, styles.thumbPlaceholder]} />
-      )}
+      <CachedCover uri={coverUrl} size={48} borderRadius={6} />
       <View style={styles.rowText}>
         <Text style={styles.rowTitle} numberOfLines={1}>
           {title}
@@ -46,9 +47,10 @@ function ResultRow({
       </View>
     </Pressable>
   );
-}
+});
 
 export default function SearchTabScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
   const query = useSearchStore((s) => s.query);
@@ -59,38 +61,55 @@ export default function SearchTabScreen() {
   const artists = useSearchStore((s) => s.artists);
   const albums = useSearchStore((s) => s.albums);
   const songs = useSearchStore((s) => s.songs);
-  const playSong = usePlayerStore((s) => s.playSong);
-  const hasMiniPlayer = usePlayerStore((s) => Boolean(s.currentSong));
+  const { playSong } = usePlayerActions();
 
   useEffect(() => () => clear(), [clear]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const results = [
-    ...songs.map((item) => ({
+  const results = useMemo<SearchRow[]>(() => {
+    const songRows = songs.map((item) => ({
       key: `song-${item.id}`,
       title: item.title,
       subtitle: `${item.artist} · ${item.album}`,
       coverUrl: item.coverArtUrl,
       onPress: () => playSong(item, songs),
-    })),
-    ...albums.map((item) => ({
+    }));
+    const albumRows = albums.map((item) => ({
       key: `album-${item.id}`,
       title: item.title,
       subtitle: item.artist,
       coverUrl: item.coverArtUrl,
-      onPress: () => undefined,
-    })),
-    ...artists.map((item) => ({
+      onPress: () => openAlbum(router, item.id),
+    }));
+    const artistRows = artists.map((item) => ({
       key: `artist-${item.id}`,
       title: item.name,
       subtitle: `${item.albumCount} albums`,
       coverUrl: item.coverArtUrl,
-      onPress: () => undefined,
-    })),
-  ];
+      onPress: () => openArtist(router, item.id),
+    }));
+    return [...songRows, ...albumRows, ...artistRows];
+  }, [albums, artists, playSong, router, songs]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: SearchRow }) => (
+      <SearchResultRow
+        title={item.title}
+        subtitle={item.subtitle}
+        coverUrl={item.coverUrl}
+        onPress={item.onPress}
+      />
+    ),
+    [],
+  );
+
+  const bottomInset = useMemo(
+    () => getScrollBottomInset(insets.bottom, { hasMiniPlayer: true }),
+    [insets.bottom],
+  );
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <AuthGradientBackground>
@@ -99,9 +118,7 @@ export default function SearchTabScreen() {
           styles.container,
           {
             paddingTop: insets.top + authSpacing.md,
-            paddingBottom: getScrollBottomInset(insets.bottom, {
-              hasMiniPlayer,
-            }),
+            paddingBottom: bottomInset,
           },
         ]}
       >
@@ -128,14 +145,11 @@ export default function SearchTabScreen() {
         <FlatList
           data={results}
           keyExtractor={(item) => item.key}
-          renderItem={({ item }) => (
-            <ResultRow
-              title={item.title}
-              subtitle={item.subtitle}
-              coverUrl={item.coverUrl}
-              onPress={item.onPress}
-            />
-          )}
+          renderItem={renderItem}
+          initialNumToRender={12}
+          maxToRenderPerBatch={16}
+          windowSize={8}
+          removeClippedSubviews
           ListEmptyComponent={
             query.trim() && !isSearching && !lastError ? (
               <Text style={styles.empty}>No results for “{query.trim()}”.</Text>
@@ -190,17 +204,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: authSpacing.sm,
   },
-  thumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 6,
-    marginRight: authSpacing.sm,
-  },
-  thumbPlaceholder: {
-    backgroundColor: authColors.surfaceHighlight,
-  },
   rowText: {
     flex: 1,
+    marginLeft: authSpacing.sm,
   },
   rowTitle: {
     color: authColors.textPrimary,

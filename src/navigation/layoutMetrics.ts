@@ -7,17 +7,39 @@ export const MINI_PLAYER_GAP = 8;
 
 export function getScrollBottomInset(
   safeBottom: number,
-  options?: { hasMiniPlayer?: boolean },
+  options?: { hasMiniPlayer?: boolean; showTabBar?: boolean },
 ): number {
-  let inset =
-    safeBottom +
-    FLOATING_TAB_BAR_BOTTOM_MARGIN +
-    FLOATING_TAB_BAR_HEIGHT +
-    FLOATING_TAB_BAR_BOTTOM_MARGIN;
+  const showTabBar = options?.showTabBar ?? true;
+  let inset = safeBottom + FLOATING_TAB_BAR_BOTTOM_MARGIN;
+
+  if (showTabBar) {
+    inset += FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_BOTTOM_MARGIN;
+  } else {
+    inset += FLOATING_TAB_BAR_BOTTOM_MARGIN;
+  }
 
   if (options?.hasMiniPlayer) {
     inset += MINI_PLAYER_HEIGHT + MINI_PLAYER_GAP;
   }
 
   return inset;
+}
+
+/** Bottom offset for absolutely positioned global mini player. */
+export function getMiniPlayerBottomOffset(
+  safeBottom: number,
+  options?: { showTabBar?: boolean },
+): number {
+  const showTabBar = options?.showTabBar ?? false;
+  if (showTabBar) {
+    return (
+      safeBottom +
+      FLOATING_TAB_BAR_BOTTOM_MARGIN +
+      FLOATING_TAB_BAR_HEIGHT +
+      FLOATING_TAB_BAR_BOTTOM_MARGIN +
+      MINI_PLAYER_GAP
+    );
+  }
+
+  return safeBottom + FLOATING_TAB_BAR_BOTTOM_MARGIN + MINI_PLAYER_GAP;
 }

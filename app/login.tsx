@@ -59,11 +59,14 @@ export default function LoginScreen() {
     }
 
     try {
+      const baseUrl = form.baseUrl.trim();
       await login({
         label: form.label.trim(),
-        baseUrl: form.baseUrl.trim(),
+        baseUrl,
         username: form.username.trim(),
         password: form.password,
+        allowInsecureConnection:
+          __DEV__ || baseUrl.toLowerCase().startsWith("http://"),
       });
       syncFromEndpointStore();
       router.replace("/(tabs)/library");

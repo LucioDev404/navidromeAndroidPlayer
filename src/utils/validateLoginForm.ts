@@ -26,7 +26,9 @@ export function validateLoginForm(values: LoginFormValues): LoginFormErrors {
     errors.baseUrl = "Server URL is required";
   } else {
     try {
-      normalizeServerUrl(values.baseUrl);
+      const allowInsecure =
+        __DEV__ || values.baseUrl.trim().toLowerCase().startsWith("http://");
+      normalizeServerUrl(values.baseUrl, { allowInsecure });
     } catch (error) {
       errors.baseUrl =
         error instanceof SubsonicApiError

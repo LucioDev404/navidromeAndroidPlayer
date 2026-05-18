@@ -24,6 +24,7 @@ const DEFAULT_TIMEOUT_MS = 20_000;
 export interface SubsonicClientOptions {
   baseUrl: string;
   credentials: EndpointCredentials;
+  allowInsecure?: boolean;
   timeoutMs?: number;
   maxRetries?: number;
   requireNetwork?: boolean;
@@ -38,7 +39,9 @@ export class SubsonicClient {
   private readonly requireNetwork: boolean;
 
   constructor(options: SubsonicClientOptions) {
-    const normalized = normalizeServerUrl(options.baseUrl);
+    const normalized = normalizeServerUrl(options.baseUrl, {
+      allowInsecure: options.allowInsecure ?? __DEV__,
+    });
     this.restBaseUrl = normalized.restBaseUrl;
     this.origin = normalized.origin;
     this.credentials = {

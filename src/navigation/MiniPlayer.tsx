@@ -1,67 +1,69 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import {
-  Image,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { memo, useCallback } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
-  FLOATING_TAB_BAR_BOTTOM_MARGIN,
-  FLOATING_TAB_BAR_HEIGHT,
   FLOATING_TAB_BAR_HORIZONTAL_MARGIN,
-  MINI_PLAYER_GAP,
+  getMiniPlayerBottomOffset,
   MINI_PLAYER_HEIGHT,
 } from "./layoutMetrics";
-import { usePlayerStore } from "../store/usePlayerStore";
+import { openFullPlayer } from "./navigationHelpers";
+import { CachedCover } from "../components/ui/CachedCover";
+import { GlassSurface } from "../components/ui/GlassSurface";
+import {
+  useCurrentSong,
+  useIsPlaying,
+  usePlaybackStatus,
+  usePlayerActions,
+} from "../store/playerSelectors";
 import { authColors, authRadii, authSpacing } from "../theme/authTheme";
 
-export function MiniPlayer() {
+interface MiniPlayerProps {
+  showTabBar: boolean;
+}
+
+function MiniPlayerComponent({ showTabBar }: MiniPlayerProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const currentSong = usePlayerStore((s) => s.currentSong);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const togglePlay = usePlayerStore((s) => s.togglePlay);
+  const currentSong = useCurrentSong();
+  const isPlaying = useIsPlaying();
+  const status = usePlaybackStatus();
+  const { togglePlay } = usePlayerActions();
+
+  const openPlayer = useCallback(() => {
+    openFullPlayer(router);
+  }, [router]);
+
+  const handleToggle = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      togglePlay();
+    },
+    [togglePlay],
+  );
 
   if (!currentSong) {
     return null;
   }
 
-  const bottomOffset =
-    insets.bottom +
-    FLOATING_TAB_BAR_BOTTOM_MARGIN +
-    FLOATING_TAB_BAR_HEIGHT +
-    FLOATING_TAB_BAR_BOTTOM_MARGIN +
-    MINI_PLAYER_GAP;
+  const bottomOffset = getMiniPlayerBottomOffset(insets.bottom, { showTabBar });
+  const isBuffering = status === "loading" || status === "buffering";
 
   return (
     <View
       style={[styles.wrapper, { bottom: bottomOffset }]}
       pointerEvents="box-none"
     >
-      <Pressable
-        onPress={() => router.push("/player")}
-        style={styles.pressable}
-      >
-        <BlurView
-          intensity={Platform.OS === "ios" ? 68 : 44}
-          tint="dark"
-          style={styles.bar}
-        >
+      <Pressable onPress={openPlayer} style={styles.pressable}>
+        <GlassSurface style={styles.bar}>
           <View style={styles.inner}>
-            {currentSong.coverArtUrl ? (
-              <Image
-                source={{ uri: currentSong.coverArtUrl }}
-                style={styles.art}
-              />
-            ) : (
-              <View style={[styles.art, styles.artPlaceholder]} />
-            )}
+            <CachedCover
+              uri={currentSong.coverArtUrl}
+              size={42}
+              borderRadius={6}
+            />
             <View style={styles.meta}>
               <Text style={styles.title} numberOfLines={1}>
                 {currentSong.title}
@@ -71,21 +73,19 @@ export function MiniPlayer() {
               </Text>
             </View>
             <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                togglePlay();
-              }}
+              onPress={handleToggle}
               hitSlop={12}
               style={styles.playButton}
+              accessibilityLabel={isPlaying ? "Pause" : "Play"}
             >
               <Ionicons
-                name={isPlaying ? "pause" : "play"}
+                name={isBuffering ? "hourglass" : isPlaying ? "pause" : "play"}
                 size={26}
                 color={authColors.textPrimary}
               />
             </Pressable>
           </View>
-        </BlurView>
+        </GlassSurface>
       </Pressable>
     </View>
   );
@@ -115,17 +115,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: authSpacing.sm,
     backgroundColor: "rgba(24,24,24,0.72)",
   },
-  art: {
-    width: 42,
-    height: 42,
-    borderRadius: 6,
-    marginRight: authSpacing.sm,
-  },
-  artPlaceholder: {
-    backgroundColor: authColors.surfaceHighlight,
-  },
   meta: {
     flex: 1,
+    marginLeft: authSpacing.sm,
     marginRight: authSpacing.sm,
   },
   title: {
@@ -145,3 +137,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+export const MiniPlayer = memo(MiniPlayerComponent);

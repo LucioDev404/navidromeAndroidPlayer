@@ -1,15 +1,19 @@
+import { useRouter } from "expo-router";
+import { memo, useCallback } from "react";
 import {
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
   View,
-  ViewStyle,
+  type ListRenderItem,
+  type ViewStyle,
 } from "react-native";
 
 import type { Album, Artist, Playlist, Song } from "../../api/models/media";
+import { openAlbum, openArtist } from "../../navigation/navigationHelpers";
 import { authColors, authRadii, authSpacing } from "../../theme/authTheme";
+import { CachedCover } from "../ui/CachedCover";
 
 type CarouselItem = Album | Artist | Song | Playlist;
 
@@ -41,22 +45,83 @@ function getSubtitle(item: CarouselItem): string {
   return "";
 }
 
-function getCover(item: CarouselItem): string | undefined {
-  return item.coverArtUrl;
+interface CarouselTileProps {
+  item: CarouselItem;
+  variant: "album" | "artist" | "song";
+  tileSize: number;
+  onPress: () => void;
 }
 
-export function MediaCarousel({
+const CarouselTile = memo(function CarouselTile({
+  item,
+  variant,
+  tileSize,
+  onPress,
+}: CarouselTileProps) {
+  const borderRadius = variant === "artist" ? tileSize / 2 : authRadii.md;
+
+  return (
+    <Pressable style={[styles.tile, { width: tileSize }]} onPress={onPress}>
+      <CachedCover
+        uri={item.coverArtUrl}
+        size={tileSize}
+        borderRadius={borderRadius}
+        style={styles.cover}
+      />
+      <Text style={styles.itemTitle} numberOfLines={2}>
+        {getTitle(item)}
+      </Text>
+      <Text style={styles.itemSubtitle} numberOfLines={1}>
+        {getSubtitle(item)}
+      </Text>
+    </Pressable>
+  );
+});
+
+function MediaCarouselComponent({
   title,
   items,
   variant = "album",
   onPressItem,
   style,
 }: MediaCarouselProps) {
+  const router = useRouter();
+  const tileSize = variant === "artist" ? 140 : 160;
+
+  const defaultPress = useCallback(
+    (item: CarouselItem) => {
+      if (variant === "album" && "title" in item) {
+        openAlbum(router, item.id);
+        return;
+      }
+      if (variant === "artist" && "name" in item) {
+        openArtist(router, item.id);
+      }
+    },
+    [router, variant],
+  );
+
+  const renderItem: ListRenderItem<CarouselItem> = useCallback(
+    ({ item }) => (
+      <CarouselTile
+        item={item}
+        variant={variant}
+        tileSize={tileSize}
+        onPress={() => (onPressItem ?? defaultPress)(item)}
+      />
+    ),
+    [defaultPress, onPressItem, tileSize, variant],
+  );
+
+  const keyExtractor = useCallback(
+    (item: CarouselItem, index: number) =>
+      "id" in item && item.id ? item.id : `${getTitle(item)}-${index}`,
+    [],
+  );
+
   if (items.length === 0) {
     return null;
   }
-
-  const tileSize = variant === "artist" ? 140 : 160;
 
   return (
     <View style={[styles.section, style]}>
@@ -64,50 +129,14 @@ export function MediaCarousel({
       <FlatList
         horizontal
         data={items}
-        keyExtractor={(item, index) =>
-          "id" in item && item.id ? item.id : `${getTitle(item)}-${index}`
-        }
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.tile, { width: tileSize }]}
-            onPress={() => onPressItem?.(item)}
-          >
-            {getCover(item) ? (
-              <Image
-                source={{ uri: getCover(item) }}
-                style={[
-                  styles.cover,
-                  {
-                    width: tileSize,
-                    height: tileSize,
-                    borderRadius:
-                      variant === "artist" ? tileSize / 2 : authRadii.md,
-                  },
-                ]}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.coverPlaceholder,
-                  {
-                    width: tileSize,
-                    height: tileSize,
-                    borderRadius:
-                      variant === "artist" ? tileSize / 2 : authRadii.md,
-                  },
-                ]}
-              />
-            )}
-            <Text style={styles.itemTitle} numberOfLines={2}>
-              {getTitle(item)}
-            </Text>
-            <Text style={styles.itemSubtitle} numberOfLines={1}>
-              {getSubtitle(item)}
-            </Text>
-          </Pressable>
-        )}
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        removeClippedSubviews
       />
     </View>
   );
@@ -134,10 +163,6 @@ const styles = StyleSheet.create({
   cover: {
     marginBottom: authSpacing.sm,
   },
-  coverPlaceholder: {
-    backgroundColor: authColors.surfaceHighlight,
-    marginBottom: authSpacing.sm,
-  },
   itemTitle: {
     color: authColors.textPrimary,
     fontSize: 14,
@@ -149,3 +174,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+export const MediaCarousel = memo(MediaCarouselComponent);

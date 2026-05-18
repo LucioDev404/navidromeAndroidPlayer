@@ -484,6 +484,7 @@ export const useEndpointStore = create<EndpointStoreState>((set, get) => ({
     return new SubsonicClient({
       baseUrl: endpoint.baseUrl,
       credentials,
+      allowInsecure: endpoint.allowInsecureConnection ?? __DEV__,
     });
   },
 }));

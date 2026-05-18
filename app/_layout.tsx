@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppInitializer } from "../src/bootstrap/AppInitializer";
+import { PlaybackBootstrap } from "../src/bootstrap/PlaybackBootstrap";
 import { ErrorBoundary } from "../src/components/ErrorBoundary";
 import { AuthGate } from "../src/navigation/AuthGate";
+import { GlobalPlayerOverlay } from "../src/navigation/GlobalPlayerOverlay";
 import { useIsAuthenticated, useIsAuthReady } from "../src/store/useAuthStore";
 import { ThemeProvider } from "../src/theme/ThemeProvider";
 import { logger } from "../src/utils/logger";
@@ -33,6 +35,7 @@ function ProtectedNavigation() {
       root === "library" ||
       root === "profile" ||
       root === "accounts";
+    const isDetailRoute = root === "album" || root === "artist";
 
     if (!isAuthenticated && !isPublicRoute) {
       router.replace("/login");
@@ -41,6 +44,7 @@ function ProtectedNavigation() {
 
     if (
       isAuthenticated &&
+      !isDetailRoute &&
       (root === "login" || root === "index" || isLegacyAuthRoute)
     ) {
       router.replace(AUTHENTICATED_HOME);
@@ -57,6 +61,20 @@ function ProtectedNavigation() {
         options={{
           presentation: "fullScreenModal",
           animation: "slide_from_bottom",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="album/[id]"
+        options={{
+          animation: "slide_from_right",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="artist/[id]"
+        options={{
+          animation: "slide_from_right",
           headerShown: false,
         }}
       />
@@ -82,10 +100,13 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AppInitializer resetKey={resetKey}>
-            <StatusBar style="light" />
-            <AuthGate>
-              <ProtectedNavigation />
-            </AuthGate>
+            <PlaybackBootstrap>
+              <StatusBar style="light" />
+              <AuthGate>
+                <ProtectedNavigation />
+                <GlobalPlayerOverlay />
+              </AuthGate>
+            </PlaybackBootstrap>
           </AppInitializer>
         </ThemeProvider>
       </SafeAreaProvider>
