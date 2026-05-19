@@ -13,12 +13,24 @@ function GlobalPlayerOverlayComponent() {
   const segments = useSegments();
   const hasTrack = useHasActiveTrack();
 
+  // Check if the full player modal (/player) is currently active.
+  // The player route is presented as fullScreenModal, so when it's active,
+  // we should hide the mini player to avoid overlay conflicts and duplicates.
+  const isPlayerModalActive = useMemo(() => {
+    return segments.includes("player");
+  }, [segments]);
+
   const showTabBar = useMemo(() => {
     const root = segments[0];
     return root === "(tabs)";
   }, [segments]);
 
   if (!hasTrack) {
+    return null;
+  }
+
+  // Always hide mini player when full player is active
+  if (isPlayerModalActive) {
     return null;
   }
 
