@@ -7,6 +7,7 @@ import { useHasActiveTrack } from "../store/playerSelectors";
 
 /**
  * Root-level mini player — visible on tabs AND album/artist stack screens.
+ * Positioned at the bottom only (not full-screen) so library scroll/taps pass through.
  */
 function GlobalPlayerOverlayComponent() {
   const segments = useSegments();
@@ -22,15 +23,18 @@ function GlobalPlayerOverlayComponent() {
   }
 
   return (
-    <View style={styles.overlay} pointerEvents="box-none">
+    <View style={styles.host} pointerEvents="box-none" collapsable={false}>
       <MiniPlayer showTabBar={showTabBar} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
+  host: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 100,
     elevation: 100,
   },

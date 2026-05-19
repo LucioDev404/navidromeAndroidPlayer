@@ -1,11 +1,13 @@
 import { SubsonicApiError } from "../api/subsonic/models/errors";
 import { normalizeServerUrl } from "../api/subsonic/utils/url";
+import { resolveAllowInsecure } from "../network/endpointPolicy";
 
 export interface LoginFormValues {
   label: string;
   baseUrl: string;
   username: string;
   password: string;
+  allowInsecureConnection: boolean;
 }
 
 export interface LoginFormErrors {
@@ -26,9 +28,14 @@ export function validateLoginForm(values: LoginFormValues): LoginFormErrors {
     errors.baseUrl = "Server URL is required";
   } else {
     try {
-      const allowInsecure =
-        __DEV__ || values.baseUrl.trim().toLowerCase().startsWith("http://");
-      normalizeServerUrl(values.baseUrl, { allowInsecure });
+      const allowInsecure = resolveAllowInsecure(
+        values.baseUrl,
+        values.allowInsecureConnection,
+      );
+      normalizeServerUrl(values.baseUrl, {
+        allowInsecure,
+        rawUrl: values.baseUrl,
+      });
     } catch (error) {
       errors.baseUrl =
         error instanceof SubsonicApiError

@@ -1,4 +1,5 @@
 import { pingEndpoint } from "./pingService";
+import { resolveAllowInsecure } from "../../../network/endpointPolicy";
 import { safeLog } from "../../../security/safeLog";
 import { SubsonicClient } from "../client/SubsonicClient";
 import { SubsonicApiError } from "../models/errors";
@@ -28,15 +29,21 @@ export function buildEndpointFromInput(
   input: CreateEndpointInput,
   ping: SubsonicPingResult,
 ): NavidromeEndpoint {
-  const allowInsecure = input.allowInsecureConnection ?? __DEV__;
-  const normalized = normalizeServerUrl(input.baseUrl, { allowInsecure });
+  const allowInsecure = resolveAllowInsecure(
+    input.baseUrl,
+    input.allowInsecureConnection,
+  );
+  const normalized = normalizeServerUrl(input.baseUrl, {
+    allowInsecure,
+    rawUrl: input.baseUrl,
+  });
 
   return {
     id: createEndpointId(),
     label: sanitizeLabel(input.label),
     baseUrl: normalized.origin,
     username: sanitizeUsername(input.username),
-    allowInsecureConnection: !normalized.usesHttps,
+    allowInsecureConnection: allowInsecure || !normalized.usesHttps,
     createdAt: new Date().toISOString(),
     lastConnectedAt: new Date().toISOString(),
     connectionStatus: ping.status === "ok" ? "healthy" : "unhealthy",
@@ -63,8 +70,14 @@ export async function validateAndTestEndpoint(
     throw new SubsonicApiError("INVALID_CREDENTIALS", "Password is required.");
   }
 
-  const allowInsecure = input.allowInsecureConnection ?? __DEV__;
-  const normalized = normalizeServerUrl(input.baseUrl, { allowInsecure });
+  const allowInsecure = resolveAllowInsecure(
+    input.baseUrl,
+    input.allowInsecureConnection,
+  );
+  const normalized = normalizeServerUrl(input.baseUrl, {
+    allowInsecure,
+    rawUrl: input.baseUrl,
+  });
   const credentials: EndpointCredentials = { username, password };
 
   safeLog("info", "Validating Navidrome endpoint", {
@@ -72,9 +85,12 @@ export async function validateAndTestEndpoint(
     baseUrl: normalized.origin,
     username,
     usesHttps: normalized.usesHttps,
+    allowInsecure,
   });
 
-  const ping = await pingEndpoint(normalized.restBaseUrl, credentials, signal);
+  const ping = await pingEndpoint(normalized.restBaseUrl, credentials, signal, {
+    allowInsecure,
+  });
 
   if (ping.status !== "ok") {
     throw new SubsonicApiError(
@@ -84,7 +100,13 @@ export async function validateAndTestEndpoint(
   }
 
   const endpoint = buildEndpointFromInput(
-    { label, baseUrl: input.baseUrl, username, password },
+    {
+      label,
+      baseUrl: input.baseUrl,
+      username,
+      password,
+      allowInsecureConnection: allowInsecure,
+    },
     ping,
   );
 
@@ -96,10 +118,14 @@ export async function testExistingEndpoint(
   credentials: EndpointCredentials,
   signal?: AbortSignal,
 ): Promise<SubsonicPingResult> {
+  const allowInsecure =
+    endpoint.allowInsecureConnection ??
+    resolveAllowInsecure(endpoint.baseUrl, undefined);
+
   const client = new SubsonicClient({
     baseUrl: endpoint.baseUrl,
     credentials,
-    allowInsecure: endpoint.allowInsecureConnection ?? __DEV__,
+    allowInsecure,
   });
 
   return client.ping(signal);

@@ -54,7 +54,7 @@ export interface CreateEndpointInput {
   baseUrl: string;
   username: string;
   password: string;
-  /** Explicit opt-in for http:// servers (defaults to true in __DEV__). */
+  /** Explicit opt-in for http:// / cleartext servers (LAN self-hosted). */
   allowInsecureConnection?: boolean;
 }
 

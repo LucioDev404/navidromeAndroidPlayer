@@ -65,13 +65,18 @@ export default function SearchTabScreen() {
 
   useEffect(() => () => clear(), [clear]);
 
+  const searchContext = useMemo(
+    () => ({ type: "search" as const, title: "Search" }),
+    [],
+  );
+
   const results = useMemo<SearchRow[]>(() => {
-    const songRows = songs.map((item) => ({
+    const songRows = songs.map((item, index) => ({
       key: `song-${item.id}`,
       title: item.title,
       subtitle: `${item.artist} · ${item.album}`,
       coverUrl: item.coverArtUrl,
-      onPress: () => playSong(item, songs),
+      onPress: () => playSong(item, songs, searchContext, index),
     }));
     const albumRows = albums.map((item) => ({
       key: `album-${item.id}`,
@@ -88,7 +93,7 @@ export default function SearchTabScreen() {
       onPress: () => openArtist(router, item.id),
     }));
     return [...songRows, ...albumRows, ...artistRows];
-  }, [albums, artists, playSong, router, songs]);
+  }, [albums, artists, playSong, router, searchContext, songs]);
 
   const renderItem = useCallback(
     ({ item }: { item: SearchRow }) => (

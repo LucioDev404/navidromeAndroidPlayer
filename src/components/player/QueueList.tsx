@@ -11,6 +11,8 @@ import { CachedCover } from "../ui/CachedCover";
 
 interface QueueListProps {
   queue: Song[];
+  /** When true, list expands inside a parent ScrollView (no nested scroll / height cap). */
+  embeddedInScrollView?: boolean;
 }
 
 const ROW_HEIGHT = 56;
@@ -47,7 +49,10 @@ function QueueRow({
 
 const MemoQueueRow = memo(QueueRow);
 
-function QueueListComponent({ queue }: QueueListProps) {
+function QueueListComponent({
+  queue,
+  embeddedInScrollView = false,
+}: QueueListProps) {
   const activeIndex = useActiveQueueIndex();
   const { playQueueIndex } = usePlayerActions();
 
@@ -64,16 +69,20 @@ function QueueListComponent({ queue }: QueueListProps) {
 
   const keyExtractor = useCallback((item: Song) => item.id, []);
 
+  if (queue.length === 0) {
+    return null;
+  }
+
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.heading}>Up next</Text>
+    <View style={[styles.wrap, embeddedInScrollView && styles.wrapEmbedded]}>
+      <Text style={styles.heading}>Queue · {queue.length} tracks</Text>
       <FlatList
         data={queue}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        scrollEnabled
-        nestedScrollEnabled
-        style={styles.list}
+        scrollEnabled={!embeddedInScrollView}
+        nestedScrollEnabled={!embeddedInScrollView}
+        style={[styles.list, embeddedInScrollView && styles.listEmbedded]}
         initialNumToRender={10}
         maxToRenderPerBatch={14}
         windowSize={6}
@@ -95,10 +104,17 @@ function Separator() {
 const styles = StyleSheet.create({
   wrap: {
     marginTop: authSpacing.md,
-    maxHeight: 320,
+    maxHeight: 420,
+  },
+  wrapEmbedded: {
+    maxHeight: undefined,
+    marginBottom: authSpacing.lg,
   },
   list: {
     flexGrow: 0,
+  },
+  listEmbedded: {
+    flexGrow: 1,
   },
   heading: {
     color: authColors.textPrimary,

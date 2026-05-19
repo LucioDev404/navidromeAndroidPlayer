@@ -6,6 +6,7 @@ import { QueueManager } from "./QueueManager";
 import { resolveStreamUrl } from "./StreamResolver";
 import type { PlaybackQueue, PlaybackStatus, QueueContext } from "./types";
 import type { Song } from "../../api/models/media";
+import { resolveQueueStartIndex } from "../../playback/resolveQueueStart";
 import { safeLog } from "../../security/safeLog";
 import { usePlayerStore } from "../../store/usePlayerStore";
 
@@ -77,8 +78,13 @@ export const PlaybackController = {
     startIndex = 0,
     queueContext?: QueueContext | null,
   ): Promise<void> {
-    const queue = QueueManager.build(tracks, startIndex);
-    const track = QueueManager.getCurrentTrack(queue);
+    if (tracks.length === 0) {
+      return;
+    }
+
+    const safeIndex = Math.min(Math.max(startIndex, 0), tracks.length - 1);
+    const queue = QueueManager.build(tracks, safeIndex);
+    const track = queue.tracks[queue.activeIndex];
     if (!track) {
       return;
     }
@@ -96,20 +102,27 @@ export const PlaybackController = {
     song: Song,
     queueTracks?: Song[],
     queueContext?: QueueContext | null,
+    explicitStartIndex?: number,
   ): Promise<void> {
-    const tracks = queueTracks?.length ? queueTracks : [song];
-    const startIndex = tracks.findIndex((t) => t.id === song.id);
-    await PlaybackController.playQueue(
-      tracks,
-      startIndex >= 0 ? startIndex : 0,
-      queueContext,
+    const sourceQueue = queueTracks?.length ? queueTracks : [song];
+    const { tracks, startIndex } = resolveQueueStartIndex(
+      sourceQueue,
+      song,
+      explicitStartIndex,
     );
+
+    await PlaybackController.playQueue(tracks, startIndex, queueContext);
   },
 
   async playQueueIndex(index: number): Promise<void> {
     const state = usePlayerStore.getState();
-    const queue = QueueManager.build(state.queue, index);
-    const track = QueueManager.getCurrentTrack(queue);
+    if (state.queue.length === 0) {
+      return;
+    }
+
+    const safeIndex = Math.min(Math.max(index, 0), state.queue.length - 1);
+    const queue = QueueManager.build(state.queue, safeIndex);
+    const track = queue.tracks[queue.activeIndex];
     if (!track) {
       return;
     }

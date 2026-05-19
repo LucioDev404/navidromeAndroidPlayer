@@ -1,5 +1,6 @@
 import NetInfo from "@react-native-community/netinfo";
 
+import { resolveAllowInsecure } from "../../../network/endpointPolicy";
 import { safeLog } from "../../../security/safeLog";
 import { buildSubsonicAuthParams } from "../auth/tokenAuth";
 import { dedupeRequest } from "../cache/requestCache";
@@ -39,8 +40,13 @@ export class SubsonicClient {
   private readonly requireNetwork: boolean;
 
   constructor(options: SubsonicClientOptions) {
+    const allowInsecure = resolveAllowInsecure(
+      options.baseUrl,
+      options.allowInsecure,
+    );
     const normalized = normalizeServerUrl(options.baseUrl, {
-      allowInsecure: options.allowInsecure ?? __DEV__,
+      allowInsecure,
+      rawUrl: options.baseUrl,
     });
     this.restBaseUrl = normalized.restBaseUrl;
     this.origin = normalized.origin;
@@ -241,10 +247,23 @@ export class SubsonicClient {
           );
         }
 
-        if (message.includes("ssl") || message.includes("cert")) {
+        if (
+          message.includes("ssl") ||
+          message.includes("cert") ||
+          message.includes("tls") ||
+          message.includes("handshake")
+        ) {
           throw new SubsonicApiError(
             "SSL_ERROR",
-            "TLS/SSL connection failed. Verify the server certificate.",
+            "TLS/SSL connection failed. For self-signed certificates, install a trusted cert or use HTTP on a trusted LAN.",
+            { retryable: false, cause: error },
+          );
+        }
+
+        if (message.includes("cleartext")) {
+          throw new SubsonicApiError(
+            "INSECURE_URL",
+            "Android blocked cleartext HTTP. Rebuild the app after enabling cleartext traffic, or use HTTPS.",
             { retryable: false, cause: error },
           );
         }

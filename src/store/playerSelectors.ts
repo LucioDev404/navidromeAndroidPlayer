@@ -75,3 +75,10 @@ export function useIsAlbumQueue(albumId: string): boolean {
     (s) => s.queueContext?.type === "album" && s.queueContext.id === albumId,
   );
 }
+
+export function useIsPlaylistQueue(playlistId: string): boolean {
+  return usePlayerStore(
+    (s) =>
+      s.queueContext?.type === "playlist" && s.queueContext.id === playlistId,
+  );
+}

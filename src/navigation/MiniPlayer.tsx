@@ -9,7 +9,7 @@ import {
   getMiniPlayerBottomOffset,
   MINI_PLAYER_HEIGHT,
 } from "./layoutMetrics";
-import { openFullPlayer } from "./navigationHelpers";
+import { openArtist, openFullPlayer } from "./navigationHelpers";
 import { CachedCover } from "../components/ui/CachedCover";
 import { GlassSurface } from "../components/ui/GlassSurface";
 import {
@@ -44,6 +44,16 @@ function MiniPlayerComponent({ showTabBar }: MiniPlayerProps) {
     [togglePlay],
   );
 
+  const handleArtistPress = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      if (currentSong?.artistId) {
+        openArtist(router, currentSong.artistId);
+      }
+    },
+    [currentSong?.artistId, router],
+  );
+
   if (!currentSong) {
     return null;
   }
@@ -68,9 +78,21 @@ function MiniPlayerComponent({ showTabBar }: MiniPlayerProps) {
               <Text style={styles.title} numberOfLines={1}>
                 {currentSong.title}
               </Text>
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {currentSong.artist}
-              </Text>
+              {currentSong.artistId ? (
+                <Pressable
+                  onPress={handleArtistPress}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open artist ${currentSong.artist}`}
+                >
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    {currentSong.artist}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {currentSong.artist}
+                </Text>
+              )}
             </View>
             <Pressable
               onPress={handleToggle}

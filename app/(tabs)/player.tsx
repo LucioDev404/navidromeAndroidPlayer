@@ -1,28 +1,25 @@
-import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
-import { AuthPrimaryButton } from "../../src/components/auth/AuthPrimaryButton";
 import { PlayerControls } from "../../src/components/player/PlayerControls";
 import { PlayerErrorBoundary } from "../../src/components/player/PlayerErrorBoundary";
 import { PlayerTrackHeader } from "../../src/components/player/PlayerTrackHeader";
+import { QueueList } from "../../src/components/player/QueueList";
 import { SeekBar } from "../../src/components/player/SeekBar";
 import { getScrollBottomInset } from "../../src/navigation/layoutMetrics";
-import { openFullPlayer } from "../../src/navigation/navigationHelpers";
 import {
   useCurrentSong,
-  useQueueLength,
+  usePlayerQueue,
 } from "../../src/store/playerSelectors";
 import { useIsAuthenticated } from "../../src/store/useAuthStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
 export default function PlayerTabScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
   const currentSong = useCurrentSong();
-  const queueLength = useQueueLength();
+  const queue = usePlayerQueue();
 
   if (!isAuthenticated) {
     return null;
@@ -43,6 +40,7 @@ export default function PlayerTabScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
       >
         <Text style={styles.title}>Now Playing</Text>
 
@@ -59,19 +57,10 @@ export default function PlayerTabScreen() {
               <PlayerTrackHeader song={currentSong} artSize={260} />
               <SeekBar />
               <PlayerControls />
-              <Text style={styles.queueLabel}>
-                Up next · {queueLength} tracks
-              </Text>
+              <QueueList queue={queue} embeddedInScrollView />
             </>
           )}
         </PlayerErrorBoundary>
-
-        <AuthPrimaryButton
-          label="Open full player"
-          variant="secondary"
-          onPress={() => openFullPlayer(router)}
-          style={styles.fullPlayerButton}
-        />
       </ScrollView>
     </AuthGradientBackground>
   );
@@ -104,12 +93,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
     maxWidth: 280,
-  },
-  queueLabel: {
-    color: authColors.textSecondary,
-    marginBottom: authSpacing.lg,
-  },
-  fullPlayerButton: {
-    marginTop: authSpacing.md,
   },
 });

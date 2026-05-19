@@ -15,6 +15,7 @@ import {
   testExistingEndpoint,
   validateAndTestEndpoint,
 } from "../api/subsonic/services/connectionService";
+import { resolveAllowInsecure } from "../network/endpointPolicy";
 import { safeLog } from "../security/safeLog";
 import { isSecureStorageNative } from "../security/secureStorage";
 import {
@@ -481,10 +482,14 @@ export const useEndpointStore = create<EndpointStoreState>((set, get) => ({
       return null;
     }
 
+    const allowInsecure =
+      endpoint.allowInsecureConnection ??
+      resolveAllowInsecure(endpoint.baseUrl, undefined);
+
     return new SubsonicClient({
       baseUrl: endpoint.baseUrl,
       credentials,
-      allowInsecure: endpoint.allowInsecureConnection ?? __DEV__,
+      allowInsecure,
     });
   },
 }));

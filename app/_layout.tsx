@@ -35,18 +35,23 @@ function ProtectedNavigation() {
       root === "library" ||
       root === "profile" ||
       root === "accounts";
-    const isDetailRoute = root === "album" || root === "artist";
+    const isDetailRoute =
+      root === "album" || root === "artist" || root === "playlist";
 
     if (!isAuthenticated && !isPublicRoute) {
       router.replace("/login");
       return;
     }
 
-    if (
-      isAuthenticated &&
-      !isDetailRoute &&
-      (root === "login" || root === "index" || isLegacyAuthRoute)
-    ) {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (isDetailRoute) {
+      return;
+    }
+
+    if (root === "login" || root === "index" || isLegacyAuthRoute) {
       router.replace(AUTHENTICATED_HOME);
     }
   }, [isAuthReady, isAuthenticated, router, segments]);
@@ -73,6 +78,13 @@ function ProtectedNavigation() {
       />
       <Stack.Screen
         name="artist/[id]"
+        options={{
+          animation: "slide_from_right",
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="playlist/[id]"
         options={{
           animation: "slide_from_right",
           headerShown: false,

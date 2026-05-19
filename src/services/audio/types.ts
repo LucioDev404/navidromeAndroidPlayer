@@ -14,7 +14,7 @@ export interface PlaybackQueue {
 }
 
 export interface QueueContext {
-  type: "album" | "playlist" | "search" | "library";
+  type: "album" | "playlist" | "search" | "library" | "recent";
   id?: string;
   title?: string;
 }

@@ -47,7 +47,7 @@ export function LibraryHubScreen() {
   const isLoading = useLibraryStore((s) => s.isLoading);
   const lastError = useLibraryStore((s) => s.lastError);
   const loadLibrary = useLibraryStore((s) => s.loadLibrary);
-  const { playSong } = usePlayerActions();
+  const { playSong, playQueue } = usePlayerActions();
 
   const recentlyPlayed = useRecentlyPlayedStore((s) =>
     s.entries.map((entry) => entry.song),
@@ -62,11 +62,33 @@ export function LibraryHubScreen() {
     [insets.bottom],
   );
 
-  const handleSongPress = useCallback(
-    (item: Song) => {
-      playSong(item, library.songs.length ? library.songs : [item]);
+  const recentlyPlayedContext = useMemo(
+    () => ({ type: "recent" as const, title: "Recently Played" }),
+    [],
+  );
+
+  const librarySongsContext = useMemo(
+    () => ({ type: "library" as const, title: "Library Songs" }),
+    [],
+  );
+
+  const handleRecentlyPlayedPress = useCallback(
+    (_item: Song, index: number) => {
+      if (recentlyPlayed.length === 0) {
+        return;
+      }
+      playQueue(recentlyPlayed, index, recentlyPlayedContext);
     },
-    [library.songs, playSong],
+    [playQueue, recentlyPlayed, recentlyPlayedContext],
+  );
+
+  const handleLibrarySongPress = useCallback(
+    (item: Song, index: number) => {
+      const queue = library.songs.length ? library.songs : [item];
+      const startIndex = library.songs.length ? index : 0;
+      playSong(item, queue, librarySongsContext, startIndex);
+    },
+    [library.songs, librarySongsContext, playSong],
   );
 
   const sections = useMemo(() => {
@@ -92,6 +114,8 @@ export function LibraryHubScreen() {
     <AuthGradientBackground>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -139,7 +163,9 @@ export function LibraryHubScreen() {
               title="Recently Played"
               items={recentlyPlayed}
               variant="song"
-              onPressItem={(item) => handleSongPress(item as Song)}
+              onPressItem={(item, index) =>
+                handleRecentlyPlayedPress(item as Song, index)
+              }
             />
             <MediaCarousel
               title="Recently Added"
@@ -173,7 +199,9 @@ export function LibraryHubScreen() {
             title="Songs"
             items={library.songs}
             variant="song"
-            onPressItem={(item) => handleSongPress(item as Song)}
+            onPressItem={(item, index) =>
+              handleLibrarySongPress(item as Song, index)
+            }
           />
         ) : null}
 
@@ -181,7 +209,7 @@ export function LibraryHubScreen() {
           <MediaCarousel
             title="Playlists"
             items={library.playlists}
-            variant="album"
+            variant="playlist"
           />
         ) : null}
 

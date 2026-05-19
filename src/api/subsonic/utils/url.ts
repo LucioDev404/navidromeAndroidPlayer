@@ -1,3 +1,4 @@
+import { resolveAllowInsecure } from "../../../network/endpointPolicy";
 import { SubsonicApiError } from "../models/errors";
 
 export interface NormalizedServerUrl {
@@ -7,13 +8,18 @@ export interface NormalizedServerUrl {
 }
 
 export interface NormalizeServerUrlOptions {
-  /** When true, HTTP URLs are allowed (required for LAN/self-hosted). Defaults to __DEV__. */
+  /**
+   * When true, http:// URLs are accepted.
+   * Use resolveAllowInsecure() + user opt-in — do not rely on __DEV__ alone.
+   */
   allowInsecure?: boolean;
+  /** Raw URL before normalization — used to infer policy when allowInsecure is omitted. */
+  rawUrl?: string;
 }
 
 /**
  * Normalize Navidrome/Subsonic base URL.
- * In development, HTTP is allowed by default for self-hosted servers.
+ * Never auto-upgrades http:// to https://. Preserves user-entered protocol.
  */
 export function normalizeServerUrl(
   rawUrl: string,
@@ -24,13 +30,17 @@ export function normalizeServerUrl(
     throw new SubsonicApiError("INVALID_URL", "Server URL is required.");
   }
 
-  const allowInsecure = options?.allowInsecure ?? __DEV__;
+  const allowInsecure =
+    options?.allowInsecure ??
+    resolveAllowInsecure(options?.rawUrl ?? trimmed, undefined);
+
+  const hasExplicitProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed);
   const defaultProtocol = allowInsecure ? "http:" : "https:";
 
   let parsed: URL;
   try {
     parsed = new URL(
-      trimmed.includes("://") ? trimmed : `${defaultProtocol}//${trimmed}`,
+      hasExplicitProtocol ? trimmed : `${defaultProtocol}//${trimmed}`,
     );
   } catch {
     throw new SubsonicApiError(
@@ -51,7 +61,7 @@ export function normalizeServerUrl(
   if (!usesHttps && !allowInsecure) {
     throw new SubsonicApiError(
       "INSECURE_URL",
-      "HTTP is not allowed for this server. Enable “Allow HTTP” or use https://.",
+      "HTTP is not allowed for this server. Enable “Allow HTTP (insecure)” or use https://.",
     );
   }
 

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -14,105 +14,91 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TrackRow } from "./TrackRow";
 import type { Song } from "../../api/models/media";
 import { getScrollBottomInset } from "../../navigation/layoutMetrics";
-import { openArtist } from "../../navigation/navigationHelpers";
 import {
   useActiveQueueIndex,
-  useIsAlbumQueue,
+  useIsPlaylistQueue,
   usePlayerActions,
   usePlayerQueue,
 } from "../../store/playerSelectors";
 import { useBrowseStore } from "../../store/useBrowseStore";
 import { authColors, authSpacing } from "../../theme/authTheme";
-import { logger } from "../../utils/logger";
 import { AuthGradientBackground } from "../auth/AuthGradientBackground";
 import { CachedCover } from "../ui/CachedCover";
 
-interface AlbumDetailScreenProps {
-  albumId: string;
+interface PlaylistDetailScreenProps {
+  playlistId: string;
 }
 
 const TRACK_ROW_HEIGHT = 52;
 
-export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
+export function PlaylistDetailScreen({
+  playlistId,
+}: PlaylistDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const loadAlbum = useBrowseStore((s) => s.loadAlbum);
-  const entry = useBrowseStore((s) => s.albumById[albumId]);
-  const isLoading = useBrowseStore((s) => s.loadingAlbumId === albumId);
+  const loadPlaylist = useBrowseStore((s) => s.loadPlaylist);
+  const entry = useBrowseStore((s) => s.playlistById[playlistId]);
+  const isLoading = useBrowseStore((s) => s.loadingPlaylistId === playlistId);
   const lastError = useBrowseStore((s) => s.lastError);
   const { playQueue, playQueueIndex } = usePlayerActions();
   const activeIndex = useActiveQueueIndex();
   const playerQueue = usePlayerQueue();
-  const isThisAlbumQueue = useIsAlbumQueue(albumId);
-
-  const fetchLoggedRef = useRef(false);
+  const isThisPlaylistQueue = useIsPlaylistQueue(playlistId);
 
   useEffect(() => {
-    logger.debug("nav:albumDetail load start", { albumId });
-    fetchLoggedRef.current = false;
-    loadAlbum(albumId)
-      .then((result) => {
-        if (!fetchLoggedRef.current) {
-          fetchLoggedRef.current = true;
-          logger.debug("nav:albumDetail load done", {
-            albumId,
-            trackCount: result?.songs.length ?? 0,
-          });
-        }
-      })
-      .catch(() => undefined);
-  }, [albumId, loadAlbum]);
+    loadPlaylist(playlistId).catch(() => undefined);
+  }, [loadPlaylist, playlistId]);
 
   const songs = useMemo(() => entry?.songs ?? [], [entry?.songs]);
-  const album = entry?.album;
+  const playlist = entry?.playlist;
 
   const queueForPlayback = useMemo(() => {
-    if (isThisAlbumQueue && playerQueue.length === songs.length) {
+    if (isThisPlaylistQueue && playerQueue.length === songs.length) {
       return playerQueue;
     }
     return songs;
-  }, [isThisAlbumQueue, playerQueue, songs]);
+  }, [isThisPlaylistQueue, playerQueue, songs]);
 
-  const albumContext = useMemo(
+  const playlistContext = useMemo(
     () =>
-      album
+      playlist
         ? {
-            type: "album" as const,
-            id: albumId,
-            title: album.title,
+            type: "playlist" as const,
+            id: playlistId,
+            title: playlist.name,
           }
         : null,
-    [album, albumId],
+    [playlist, playlistId],
   );
 
   const handlePlayAll = useCallback(() => {
     if (songs.length > 0) {
-      playQueue(songs, 0, albumContext);
+      playQueue(songs, 0, playlistContext);
     }
-  }, [albumContext, playQueue, songs]);
+  }, [playQueue, playlistContext, songs]);
 
   const handleShuffle = useCallback(() => {
     if (songs.length === 0) {
       return;
     }
     const shuffled = [...songs].sort(() => Math.random() - 0.5);
-    playQueue(shuffled, 0, albumContext);
-  }, [albumContext, playQueue, songs]);
+    playQueue(shuffled, 0, playlistContext);
+  }, [playQueue, playlistContext, songs]);
 
   const handleTrackPress = useCallback(
     (index: number) => {
-      if (isThisAlbumQueue) {
+      if (isThisPlaylistQueue) {
         playQueueIndex(index);
         return;
       }
-      playQueue(songs, index, albumContext);
+      playQueue(songs, index, playlistContext);
     },
-    [albumContext, isThisAlbumQueue, playQueue, playQueueIndex, songs],
+    [isThisPlaylistQueue, playQueue, playQueueIndex, playlistContext, songs],
   );
 
   const renderTrack = useCallback(
     ({ item, index }: { item: Song; index: number }) => {
-      const isActive = isThisAlbumQueue && index === activeIndex;
+      const isActive = isThisPlaylistQueue && index === activeIndex;
       return (
         <TrackRow
           song={item}
@@ -122,34 +108,24 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
         />
       );
     },
-    [activeIndex, handleTrackPress, isThisAlbumQueue],
+    [activeIndex, handleTrackPress, isThisPlaylistQueue],
   );
 
   const listHeader = useMemo(
     () => (
       <View style={styles.hero}>
-        {album ? (
+        {playlist ? (
           <>
             <CachedCover
-              uri={album.coverArtUrl}
+              uri={playlist.coverArtUrl}
               size={220}
               borderRadius={12}
               style={styles.cover}
             />
-            <Text style={styles.albumTitle}>{album.title}</Text>
-            <Pressable
-              onPress={() => {
-                if (album.artistId) {
-                  openArtist(router, album.artistId);
-                }
-              }}
-            >
-              <Text style={styles.albumArtist}>{album.artist}</Text>
-            </Pressable>
+            <Text style={styles.playlistTitle}>{playlist.name}</Text>
             <Text style={styles.meta}>
-              {album.year ? `${album.year} · ` : ""}
               {songs.length} songs
-              {isThisAlbumQueue ? " · playing from this album" : ""}
+              {isThisPlaylistQueue ? " · playing from this playlist" : ""}
             </Text>
             <View style={styles.actions}>
               <Pressable style={styles.playAll} onPress={handlePlayAll}>
@@ -171,19 +147,18 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
         {isLoading ? (
           <ActivityIndicator color={authColors.accent} style={styles.loader} />
         ) : null}
-        {lastError && !album ? (
+        {lastError && !playlist ? (
           <Text style={styles.error}>{lastError}</Text>
         ) : null}
       </View>
     ),
     [
-      album,
       handlePlayAll,
       handleShuffle,
       isLoading,
-      isThisAlbumQueue,
+      isThisPlaylistQueue,
       lastError,
-      router,
+      playlist,
       songs.length,
     ],
   );
@@ -209,7 +184,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
         </Pressable>
 
         <FlatList
-          data={isThisAlbumQueue ? queueForPlayback : songs}
+          data={isThisPlaylistQueue ? queueForPlayback : songs}
           keyExtractor={(item) => item.id}
           renderItem={renderTrack}
           ListHeaderComponent={listHeader}
@@ -224,11 +199,13 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
             index,
           })}
           ListEmptyComponent={
-            !isLoading && album ? (
-              <Text style={styles.emptyTracks}>No tracks in this album.</Text>
+            !isLoading && playlist ? (
+              <Text style={styles.emptyTracks}>
+                No tracks in this playlist.
+              </Text>
             ) : null
           }
-          extraData={`${activeIndex}-${isThisAlbumQueue}`}
+          extraData={`${activeIndex}-${isThisPlaylistQueue}`}
         />
       </View>
     </AuthGradientBackground>
@@ -251,17 +228,11 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: authSpacing.md,
   },
-  albumTitle: {
+  playlistTitle: {
     color: authColors.textPrimary,
     fontSize: 26,
     fontWeight: "800",
     textAlign: "center",
-  },
-  albumArtist: {
-    color: authColors.textSecondary,
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 6,
   },
   meta: {
     color: authColors.textMuted,

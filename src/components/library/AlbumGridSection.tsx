@@ -50,14 +50,18 @@ function AlbumGridSectionComponent({
   const router = useRouter();
   const visible = albums.slice(0, maxItems);
 
+  const handleAlbumPress = useCallback(
+    (album: Album) => {
+      openAlbum(router, album.id);
+    },
+    [router],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Album }) => (
-      <MemoAlbumGridTile
-        album={item}
-        onPress={() => openAlbum(router, item.id)}
-      />
+      <MemoAlbumGridTile album={item} onPress={() => handleAlbumPress(item)} />
     ),
-    [router],
+    [handleAlbumPress],
   );
 
   const keyExtractor = useCallback((item: Album) => item.id, []);

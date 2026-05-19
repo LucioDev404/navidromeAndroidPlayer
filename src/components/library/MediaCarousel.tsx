@@ -11,7 +11,11 @@ import {
 } from "react-native";
 
 import type { Album, Artist, Playlist, Song } from "../../api/models/media";
-import { openAlbum, openArtist } from "../../navigation/navigationHelpers";
+import {
+  openAlbum,
+  openArtist,
+  openPlaylist,
+} from "../../navigation/navigationHelpers";
 import { authColors, authRadii, authSpacing } from "../../theme/authTheme";
 import { CachedCover } from "../ui/CachedCover";
 
@@ -20,8 +24,8 @@ type CarouselItem = Album | Artist | Song | Playlist;
 interface MediaCarouselProps {
   title: string;
   items: CarouselItem[];
-  variant?: "album" | "artist" | "song";
-  onPressItem?: (item: CarouselItem) => void;
+  variant?: "album" | "artist" | "song" | "playlist";
+  onPressItem?: (item: CarouselItem, index: number) => void;
   style?: ViewStyle;
 }
 
@@ -39,6 +43,9 @@ function getSubtitle(item: CarouselItem): string {
   if ("albumCount" in item) {
     return `${item.albumCount} albums`;
   }
+  if ("songCount" in item) {
+    return `${item.songCount} songs`;
+  }
   if ("album" in item && item.album) {
     return item.album;
   }
@@ -47,7 +54,7 @@ function getSubtitle(item: CarouselItem): string {
 
 interface CarouselTileProps {
   item: CarouselItem;
-  variant: "album" | "artist" | "song";
+  variant: "album" | "artist" | "song" | "playlist";
   tileSize: number;
   onPress: () => void;
 }
@@ -90,11 +97,15 @@ function MediaCarouselComponent({
 
   const defaultPress = useCallback(
     (item: CarouselItem) => {
-      if (variant === "album" && "title" in item) {
+      if (variant === "album") {
         openAlbum(router, item.id);
         return;
       }
-      if (variant === "artist" && "name" in item) {
+      if (variant === "playlist") {
+        openPlaylist(router, item.id);
+        return;
+      }
+      if (variant === "artist") {
         openArtist(router, item.id);
       }
     },
@@ -102,12 +113,12 @@ function MediaCarouselComponent({
   );
 
   const renderItem: ListRenderItem<CarouselItem> = useCallback(
-    ({ item }) => (
+    ({ item, index }) => (
       <CarouselTile
         item={item}
         variant={variant}
         tileSize={tileSize}
-        onPress={() => (onPressItem ?? defaultPress)(item)}
+        onPress={() => (onPressItem ?? defaultPress)(item, index)}
       />
     ),
     [defaultPress, onPressItem, tileSize, variant],

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,10 +9,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AllowHttpToggle } from "../src/components/auth/AllowHttpToggle";
 import { AuthGradientBackground } from "../src/components/auth/AuthGradientBackground";
 import { AuthPrimaryButton } from "../src/components/auth/AuthPrimaryButton";
 import { AuthTextField } from "../src/components/auth/AuthTextField";
 import { SessionBanner } from "../src/components/auth/SessionBanner";
+import { defaultAllowInsecureOptIn } from "../src/network/endpointPolicy";
 import { useAppStore } from "../src/store/useAppStore";
 import { useAuthLoading, useIsAuthReady } from "../src/store/useAuthStore";
 import { useEndpointStore } from "../src/store/useEndpointStore";
@@ -28,6 +30,7 @@ const EMPTY_FORM: LoginFormValues = {
   baseUrl: "",
   username: "",
   password: "",
+  allowInsecureConnection: true,
 };
 
 export default function LoginScreen() {
@@ -41,12 +44,25 @@ export default function LoginScreen() {
 
   const [form, setForm] = useState<LoginFormValues>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const allowHttpTouchedRef = useRef(false);
 
-  const updateField = (key: keyof LoginFormValues, value: string) => {
+  useEffect(() => {
+    if (allowHttpTouchedRef.current || !form.baseUrl.trim()) {
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      allowInsecureConnection: defaultAllowInsecureOptIn(current.baseUrl),
+    }));
+  }, [form.baseUrl]);
+
+  const updateField = (key: keyof LoginFormValues, value: string | boolean) => {
     setForm((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => {
       const next = { ...current };
-      delete next[key];
+      if (typeof key === "string") {
+        delete next[key];
+      }
       return next;
     });
   };
@@ -59,14 +75,12 @@ export default function LoginScreen() {
     }
 
     try {
-      const baseUrl = form.baseUrl.trim();
       await login({
         label: form.label.trim(),
-        baseUrl,
+        baseUrl: form.baseUrl.trim(),
         username: form.username.trim(),
         password: form.password,
-        allowInsecureConnection:
-          __DEV__ || baseUrl.toLowerCase().startsWith("http://"),
+        allowInsecureConnection: form.allowInsecureConnection,
       });
       syncFromEndpointStore();
       router.replace("/(tabs)/library");
@@ -114,13 +128,21 @@ export default function LoginScreen() {
           />
           <AuthTextField
             label="Server URL"
-            placeholder="https://music.example.com"
+            placeholder="http://192.168.1.10:4533"
             value={form.baseUrl}
             onChangeText={(value) => updateField("baseUrl", value)}
             error={fieldErrors.baseUrl}
             autoCapitalize="none"
             keyboardType="url"
             textContentType="URL"
+          />
+          <AllowHttpToggle
+            baseUrl={form.baseUrl}
+            value={form.allowInsecureConnection}
+            onChange={(value) => {
+              allowHttpTouchedRef.current = true;
+              updateField("allowInsecureConnection", value);
+            }}
           />
           <AuthTextField
             label="Username"

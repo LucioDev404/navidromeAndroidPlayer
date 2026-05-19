@@ -42,7 +42,12 @@ interface PlayerState {
   ) => void;
   resetPlayback: () => void;
 
-  playSong: (song: Song, queue?: Song[], context?: QueueContext | null) => void;
+  playSong: (
+    song: Song,
+    queue?: Song[],
+    context?: QueueContext | null,
+    startIndex?: number,
+  ) => void;
   playQueue: (
     songs: Song[],
     startIndex?: number,
@@ -99,16 +104,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ ...INITIAL_STATE });
   },
 
-  playSong: (song, queue, context) => {
-    PlaybackController.playSong(song, queue, context).catch((error) => {
-      const message =
-        error instanceof Error ? error.message : "Playback failed";
-      get().patchPlayback({
-        status: "error",
-        isPlaying: false,
-        playbackError: message,
-      });
-    });
+  playSong: (song, queue, context, startIndex) => {
+    PlaybackController.playSong(song, queue, context, startIndex).catch(
+      (error) => {
+        const message =
+          error instanceof Error ? error.message : "Playback failed";
+        get().patchPlayback({
+          status: "error",
+          isPlaying: false,
+          playbackError: message,
+        });
+      },
+    );
   },
 
   playQueue: (songs, startIndex = 0, context) => {

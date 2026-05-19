@@ -1,7 +1,9 @@
-import { memo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { memo, useCallback } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { Song } from "../../api/models/media";
+import { openArtist } from "../../navigation/navigationHelpers";
 import { authColors, authSpacing } from "../../theme/authTheme";
 import { CachedCover } from "../ui/CachedCover";
 
@@ -14,6 +16,14 @@ function PlayerTrackHeaderComponent({
   song,
   artSize = 280,
 }: PlayerTrackHeaderProps) {
+  const router = useRouter();
+
+  const openArtistDetail = useCallback(() => {
+    if (song.artistId) {
+      openArtist(router, song.artistId);
+    }
+  }, [router, song.artistId]);
+
   return (
     <View style={styles.wrap}>
       <CachedCover
@@ -23,7 +33,17 @@ function PlayerTrackHeaderComponent({
         style={styles.art}
       />
       <Text style={styles.title}>{song.title}</Text>
-      <Text style={styles.artist}>{song.artist}</Text>
+      {song.artistId ? (
+        <Pressable
+          onPress={openArtistDetail}
+          accessibilityRole="button"
+          accessibilityLabel={`Open artist ${song.artist}`}
+        >
+          <Text style={styles.artist}>{song.artist}</Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.artist}>{song.artist}</Text>
+      )}
       <Text style={styles.album}>{song.album}</Text>
     </View>
   );
@@ -61,5 +81,7 @@ export const PlayerTrackHeader = memo(
   (prev, next) =>
     prev.song.id === next.song.id &&
     prev.song.title === next.song.title &&
+    prev.song.artist === next.song.artist &&
+    prev.song.artistId === next.song.artistId &&
     prev.song.coverArtUrl === next.song.coverArtUrl,
 );

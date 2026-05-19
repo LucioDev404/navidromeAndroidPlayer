@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AccountCard } from "../../src/components/auth/AccountCard";
+import { AllowHttpToggle } from "../../src/components/auth/AllowHttpToggle";
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
 import { AuthPrimaryButton } from "../../src/components/auth/AuthPrimaryButton";
 import { AuthTextField } from "../../src/components/auth/AuthTextField";
@@ -62,6 +63,7 @@ export default function AccountTabScreen() {
     baseUrl: "",
     username: "",
     password: "",
+    allowInsecureConnection: true,
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -71,7 +73,7 @@ export default function AccountTabScreen() {
 
   const activeEndpoint = endpoints.find((item) => item.id === activeEndpointId);
 
-  const updateField = (key: keyof LoginFormValues, value: string) => {
+  const updateField = (key: keyof LoginFormValues, value: string | boolean) => {
     setForm((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => {
       const next = { ...current };
@@ -93,9 +95,16 @@ export default function AccountTabScreen() {
         baseUrl: form.baseUrl.trim(),
         username: form.username.trim(),
         password: form.password,
+        allowInsecureConnection: form.allowInsecureConnection,
       });
       syncFromEndpointStore();
-      setForm({ label: "", baseUrl: "", username: "", password: "" });
+      setForm({
+        label: "",
+        baseUrl: "",
+        username: "",
+        password: "",
+        allowInsecureConnection: true,
+      });
       setShowAddForm(false);
       await loadLibrary({ force: true });
     } catch {
@@ -207,6 +216,13 @@ export default function AccountTabScreen() {
                 onChangeText={(v) => updateField("baseUrl", v)}
                 error={fieldErrors.baseUrl}
                 keyboardType="url"
+              />
+              <AllowHttpToggle
+                baseUrl={form.baseUrl}
+                value={form.allowInsecureConnection}
+                onChange={(value) =>
+                  updateField("allowInsecureConnection", value)
+                }
               />
               <AuthTextField
                 label="Username"

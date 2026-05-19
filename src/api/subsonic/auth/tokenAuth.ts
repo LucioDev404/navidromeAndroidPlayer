@@ -1,23 +1,28 @@
 import CryptoJS from "crypto-js";
+import * as ExpoCrypto from "expo-crypto";
 
+import { bytesToHex } from "../../../crypto/bytes";
 import type { EndpointCredentials, SubsonicAuthParams } from "../models/types";
 
 export const SUBSONIC_CLIENT_ID = "NavidromePlayerExpo";
 export const SUBSONIC_API_VERSION = "1.16.1";
 
+const SALT_BYTE_LENGTH = 16;
+
 /**
  * Subsonic token authentication (recommended over plaintext password param):
  *
- * 1. Client generates random `salt`
+ * 1. Client generates random `salt` (secure random via expo-crypto)
  * 2. Client computes `token = md5(password + salt)` as lowercase hex
  * 3. Request sends: u=username, t=token, s=salt, v=version, c=client, f=json
  *
- * The server stores only a hash of the password and validates token using the
- * same formula, so the password never travels over the wire after setup.
+ * crypto-js WordArray.random() is NOT used — it requires Node/browser crypto
+ * and crashes React Native production builds with:
+ * "Native crypto module could not be used to get secure random number"
  */
-export function generateSalt(length = 16): string {
-  const bytes = CryptoJS.lib.WordArray.random(length);
-  return CryptoJS.enc.Hex.stringify(bytes).slice(0, length * 2);
+export function generateSalt(length = SALT_BYTE_LENGTH): string {
+  const bytes = ExpoCrypto.getRandomBytes(length);
+  return bytesToHex(bytes);
 }
 
 export function computeSubsonicToken(password: string, salt: string): string {

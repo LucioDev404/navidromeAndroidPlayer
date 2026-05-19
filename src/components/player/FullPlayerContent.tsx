@@ -63,7 +63,6 @@ function FullPlayerContentComponent() {
           </Text>
         ) : null}
 
-        <Text style={styles.queueMeta}>Queue · {queue.length} songs</Text>
         <QueueList queue={queue} />
       </ScrollView>
     </View>
@@ -94,10 +93,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: authColors.textSecondary,
     fontSize: 16,
-  },
-  queueMeta: {
-    color: authColors.textSecondary,
-    marginBottom: authSpacing.sm,
   },
   statusHint: {
     color: authColors.textMuted,
