@@ -17,6 +17,7 @@ import {
 } from "../api/subsonic/services/connectionService";
 import { resolveAllowInsecure } from "../network/endpointPolicy";
 import { safeLog } from "../security/safeLog";
+import { PlaybackController } from "../services/audio/PlaybackController";
 import { isSecureStorageNative } from "../security/secureStorage";
 import {
   clearActiveEndpointId,
@@ -454,6 +455,16 @@ export const useEndpointStore = create<EndpointStoreState>((set, get) => ({
   },
 
   logout: async () => {
+    // Stop playback and release audio resources on logout to avoid stray
+    // background playback or stale sessions.
+    try {
+      await PlaybackController.clear();
+    } catch (error) {
+      safeLog("warn", "PlaybackController.clear failed during logout", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     await clearActiveEndpointId();
     set({
       activeEndpointId: null,
@@ -463,7 +474,7 @@ export const useEndpointStore = create<EndpointStoreState>((set, get) => ({
       lastError: null,
       sessionWarning: null,
     });
-    safeLog("info", "User logged out");
+    safeLog("info", "User logged out (playback cleared)");
   },
 
   getActiveEndpoint: () => {

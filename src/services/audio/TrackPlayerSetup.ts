@@ -23,7 +23,13 @@ export async function ensureTrackPlayerReady(): Promise<void> {
 
     await TrackPlayer.updateOptions({
       android: {
-        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
+        // IMPORTANT: stop playback when the app process is killed to avoid
+        // orphaned / ghost playback. Previously this was ContinuePlayback
+        // which allowed audio to continue after the JS process exited.
+        // Stop playback and remove notification when the app process is killed.
+        // This prevents orphaned audio playback after the JS process exits.
+        appKilledPlaybackBehavior:
+          AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
         alwaysPauseOnInterruption: false,
       },
       capabilities: [
