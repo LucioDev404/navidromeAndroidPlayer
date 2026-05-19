@@ -1,3 +1,4 @@
+import { fetchNowPlaying } from "./recentService";
 import { safeLog } from "../../../security/safeLog";
 import { SubsonicMappers } from "../../mappers/subsonic";
 import type { MediaLibrary } from "../../models/media";
@@ -164,7 +165,15 @@ export async function fetchFullLibrary(
   const albumById = new Map(albums.map((album) => [album.id, album]));
   const uniqueAlbums = Array.from(albumById.values());
 
-  const randomSongs = await fetchRandomSongs(client, "60");
+  const [randomSongs, nowPlaying] = await Promise.all([
+    fetchRandomSongs(client, "60"),
+    fetchNowPlaying(client),
+  ]);
+
+  const recentlyPlayedSongs =
+    nowPlaying.length > 0
+      ? nowPlaying
+      : mappers.mapSongs(client, starred.songs);
 
   const library: MediaLibrary = {
     artists: mappers.mapArtists(client, artistsRaw),
@@ -174,7 +183,7 @@ export async function fetchFullLibrary(
     genres: mappers.mapGenres(genresRaw),
     recentlyAdded: mappers.mapAlbums(client, newestRaw),
     randomAlbums: mappers.mapAlbums(client, randomRaw),
-    recentlyPlayed: [],
+    recentlyPlayed: recentlyPlayedSongs,
   };
 
   safeLog("info", "Library loaded from Navidrome", {

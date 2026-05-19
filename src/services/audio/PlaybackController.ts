@@ -165,11 +165,25 @@ export const PlaybackController = {
   async playNext(): Promise<void> {
     const state = usePlayerStore.getState();
     const queue = QueueManager.build(state.queue, state.activeIndex);
-    const nextIndex = QueueManager.getNextIndex(queue);
-    if (nextIndex == null) {
+
+    if (state.repeatMode === "one" && state.currentSong) {
+      await PlaybackController.seekTo(0);
+      await AudioService.play();
+      usePlayerStore
+        .getState()
+        .patchPlayback({ isPlaying: true, status: "playing" });
       return;
     }
-    await PlaybackController.playQueueIndex(nextIndex);
+
+    const nextIndex = QueueManager.getNextIndex(queue);
+    if (nextIndex != null) {
+      await PlaybackController.playQueueIndex(nextIndex);
+      return;
+    }
+
+    if (state.repeatMode === "all" && queue.tracks.length > 0) {
+      await PlaybackController.playQueueIndex(0);
+    }
   },
 
   async playPrevious(): Promise<void> {

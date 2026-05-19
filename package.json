@@ -18,6 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate": "npm run typecheck && npm run lint && npm run format:check",
+    "version:bump": "node scripts/bump-version.js",
     "post-prebuild-fix": "node scripts/post-prebuild-fix.js",
     "prebuild:android": "expo prebuild --platform android --clean && npm run post-prebuild-fix",
     "build:apk": "npm run prebuild:android && cd android && ./gradlew assembleRelease --no-daemon"

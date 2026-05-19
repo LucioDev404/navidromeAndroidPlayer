@@ -31,6 +31,16 @@ async function runStartupTasks(): Promise<void> {
 
   await useEndpointStore.getState().hydrate();
   useAppStore.getState().syncFromEndpointStore();
+
+  useEndpointStore.subscribe((state, prev) => {
+    if (
+      state.activeEndpointId !== prev.activeEndpointId ||
+      state.isSessionAuthenticated !== prev.isSessionAuthenticated ||
+      state.endpoints !== prev.endpoints
+    ) {
+      useAppStore.getState().syncFromEndpointStore();
+    }
+  });
 }
 
 export function AppInitializer({

@@ -7,6 +7,7 @@ import type {
   PlaybackQueue,
   PlaybackStatus,
   QueueContext,
+  RepeatMode,
 } from "../services/audio/types";
 
 interface PlayerState {
@@ -19,6 +20,10 @@ interface PlayerState {
   positionMillis: number;
   durationMillis: number;
   playbackError: string | null;
+  repeatMode: RepeatMode;
+  shuffleEnabled: boolean;
+  /** Snapshot before shuffle so we can restore order. */
+  naturalQueue: Song[] | null;
 
   applyQueue: (
     queue: PlaybackQueue,
@@ -60,6 +65,9 @@ interface PlayerState {
   seekTo: (positionMillis: number) => void;
   retryPlayback: () => void;
   clear: () => void;
+  setRepeatMode: (mode: RepeatMode) => void;
+  cycleRepeatMode: () => void;
+  toggleShuffle: () => void;
 }
 
 const INITIAL_STATE = {
@@ -72,6 +80,9 @@ const INITIAL_STATE = {
   positionMillis: 0,
   durationMillis: 0,
   playbackError: null as string | null,
+  repeatMode: "off" as RepeatMode,
+  shuffleEnabled: false,
+  naturalQueue: null as Song[] | null,
 };
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -79,6 +90,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   applyQueue: (queue, patch) => {
     const track = QueueManager.getCurrentTrack(queue);
+    const prevQueue = get().queue;
+    const queueChanged =
+      prevQueue.length !== queue.tracks.length ||
+      prevQueue.some((song, index) => song.id !== queue.tracks[index]?.id);
+
     set({
       currentSong: track,
       queue: queue.tracks,
@@ -90,6 +106,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       positionMillis: patch?.positionMillis ?? 0,
       durationMillis:
         patch?.durationMillis ?? (track?.duration ? track.duration * 1000 : 0),
+      ...(queueChanged
+        ? { shuffleEnabled: false, naturalQueue: null }
+        : undefined),
     });
   },
 
@@ -101,7 +120,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   resetPlayback: () => {
-    set({ ...INITIAL_STATE });
+    set({ ...INITIAL_STATE, naturalQueue: null });
   },
 
   playSong: (song, queue, context, startIndex) => {
@@ -171,6 +190,59 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   clear: () => {
     PlaybackController.clear().catch(() => undefined);
+  },
+
+  setRepeatMode: (mode) => {
+    set({ repeatMode: mode });
+  },
+
+  cycleRepeatMode: () => {
+    const order: RepeatMode[] = ["off", "all", "one"];
+    const current = get().repeatMode;
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    set({ repeatMode: next });
+  },
+
+  toggleShuffle: () => {
+    const state = get();
+    if (state.queue.length < 2) {
+      set({ shuffleEnabled: !state.shuffleEnabled, naturalQueue: null });
+      return;
+    }
+
+    if (!state.shuffleEnabled) {
+      const current = state.currentSong;
+      const naturalQueue = [...state.queue];
+      const shuffled = QueueManager.shuffle(naturalQueue);
+      const startIndex = current
+        ? Math.max(
+            0,
+            shuffled.findIndex((track) => track.id === current.id),
+          )
+        : 0;
+      set({
+        shuffleEnabled: true,
+        naturalQueue,
+        queue: shuffled,
+        activeIndex: startIndex,
+      });
+      return;
+    }
+
+    const naturalQueue = state.naturalQueue ?? state.queue;
+    const current = state.currentSong;
+    const startIndex = current
+      ? Math.max(
+          0,
+          naturalQueue.findIndex((track) => track.id === current.id),
+        )
+      : state.activeIndex;
+    set({
+      shuffleEnabled: false,
+      naturalQueue: null,
+      queue: naturalQueue,
+      activeIndex: startIndex >= 0 ? startIndex : 0,
+    });
   },
 }));
 

@@ -17,9 +17,20 @@ export function usePlayerActions() {
       seekTo: s.seekTo,
       retryPlayback: s.retryPlayback,
       clear: s.clear,
+      setRepeatMode: s.setRepeatMode,
+      cycleRepeatMode: s.cycleRepeatMode,
+      toggleShuffle: s.toggleShuffle,
     }),
     shallow,
   );
+}
+
+export function useRepeatMode() {
+  return usePlayerStore((s) => s.repeatMode);
+}
+
+export function useShuffleEnabled() {
+  return usePlayerStore((s) => s.shuffleEnabled);
 }
 
 export function useCurrentSong(): Song | null {

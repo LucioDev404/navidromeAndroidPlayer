@@ -19,6 +19,8 @@ export interface QueueContext {
   title?: string;
 }
 
+export type RepeatMode = "off" | "all" | "one";
+
 export interface PlaybackSnapshot {
   currentSong: Song | null;
   queue: Song[];

@@ -17,6 +17,7 @@ import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBa
 import { AuthPrimaryButton } from "../../src/components/auth/AuthPrimaryButton";
 import { AuthTextField } from "../../src/components/auth/AuthTextField";
 import { SessionBanner } from "../../src/components/auth/SessionBanner";
+import { AppInfoCard } from "../../src/components/settings/AppInfoCard";
 import { getScrollBottomInset } from "../../src/navigation/layoutMetrics";
 import { useAppStore } from "../../src/store/useAppStore";
 import {
@@ -259,10 +260,11 @@ export default function AccountTabScreen() {
           )}
 
           <View style={styles.settingsBlock}>
-            <Text style={styles.sectionTitle}>Settings</Text>
+            <Text style={styles.sectionTitle}>About</Text>
+            <AppInfoCard serverLabel={serverLabel} serverUrl={serverUrl} />
             <Text style={styles.settingsHint}>
-              Playback quality, downloads, and appearance options will appear
-              here.
+              Downloads, lyrics, and advanced playback options are planned for a
+              future release.
             </Text>
           </View>
 

@@ -60,9 +60,7 @@ export default function LoginScreen() {
     setForm((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => {
       const next = { ...current };
-      if (typeof key === "string") {
-        delete next[key];
-      }
+      delete next[key];
       return next;
     });
   };
