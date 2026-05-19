@@ -13,7 +13,9 @@ interface PlaybackBootstrapProps {
 }
 
 /**
- * Initializes expo-av + playback event listeners once per app session.
+ * Initializes audio engine + playback event listeners once per app session.
+ * Native Android: react-native-track-player (media session + notification).
+ * Web: expo-av fallback.
  */
 export function PlaybackBootstrap({ children }: PlaybackBootstrapProps) {
   useEffect(() => {

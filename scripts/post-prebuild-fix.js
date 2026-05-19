@@ -1,6 +1,6 @@
 /**
  * Restores Expo Router entry and dev scripts after `expo prebuild`.
- * Ensures Android cleartext (HTTP) support in generated native projects.
+ * Ensures Android cleartext (HTTP) + TrackPlayer entry + media foreground service.
  */
 const fs = require("fs");
 const path = require("path");
@@ -30,9 +30,18 @@ const networkConfigPath = path.join(
   "network_security_config.xml",
 );
 
+const indexJsContent = `import TrackPlayer from "react-native-track-player";
+
+TrackPlayer.registerPlaybackService(() =>
+  require("./src/services/audio/playbackServiceRegistration"),
+);
+
+import "expo-router/entry";
+`;
+
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
-pkg.main = "expo-router/entry";
+pkg.main = "index.js";
 
 pkg.scripts = {
   ...pkg.scripts,
@@ -44,10 +53,7 @@ pkg.scripts = {
 };
 
 fs.writeFileSync(packageJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
-
-if (fs.existsSync(indexJsPath)) {
-  fs.unlinkSync(indexJsPath);
-}
+fs.writeFileSync(indexJsPath, indexJsContent);
 
 const networkSecurityConfigXml = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
@@ -94,4 +100,6 @@ function ensureAndroidCleartextSupport() {
 
 ensureAndroidCleartextSupport();
 
-console.log("post-prebuild-fix: restored expo-router/entry and dev scripts");
+console.log(
+  "post-prebuild-fix: TrackPlayer entry (index.js) + expo-router restored",
+);

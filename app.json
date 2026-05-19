@@ -8,7 +8,12 @@
     "platforms": ["ios", "android", "web"],
     "android": {
       "package": "com.navidrome.player",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "WAKE_LOCK"
+      ]
     },
     "splash": {
       "resizeMode": "contain",
@@ -40,7 +45,8 @@
             "infoPlist": {
               "NSAppTransportSecurity": {
                 "NSAllowsLocalNetworking": true
-              }
+              },
+              "UIBackgroundModes": ["audio"]
             }
           }
         }

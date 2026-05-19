@@ -1,5 +1,4 @@
-import type { AVPlaybackStatus } from "expo-av";
-
+import type { UnifiedPlaybackStatus } from "./AudioEngine.types";
 import { AudioService } from "./AudioService";
 import { PlaybackEvents } from "./PlaybackEvents";
 import { QueueManager } from "./QueueManager";
@@ -13,8 +12,8 @@ import { usePlayerStore } from "../../store/usePlayerStore";
 let loadToken = 0;
 let lastTrackStartedId: string | null = null;
 
-function mapAvStatus(
-  av: AVPlaybackStatus,
+function mapEngineStatus(
+  status: UnifiedPlaybackStatus,
   fallback: PlaybackStatus,
 ): {
   status: PlaybackStatus;
@@ -22,7 +21,7 @@ function mapAvStatus(
   positionMillis: number;
   durationMillis: number;
 } {
-  if (!av.isLoaded) {
+  if (!status.isLoaded) {
     return {
       status: fallback,
       isPlaying: false,
@@ -31,20 +30,21 @@ function mapAvStatus(
     };
   }
 
-  const isPlaying = av.isPlaying;
-  const positionMillis = av.positionMillis ?? 0;
-  const durationMillis = av.durationMillis ?? 0;
-
-  let status: PlaybackStatus = fallback;
-  if (av.isBuffering) {
-    status = "buffering";
-  } else if (isPlaying) {
-    status = "playing";
+  let nextStatus: PlaybackStatus = fallback;
+  if (status.isBuffering) {
+    nextStatus = "buffering";
+  } else if (status.isPlaying) {
+    nextStatus = "playing";
   } else {
-    status = "paused";
+    nextStatus = "paused";
   }
 
-  return { status, isPlaying, positionMillis, durationMillis };
+  return {
+    status: nextStatus,
+    isPlaying: status.isPlaying,
+    positionMillis: status.positionMillis,
+    durationMillis: status.durationMillis,
+  };
 }
 
 async function confirmPlaybackStarted(
@@ -64,12 +64,13 @@ async function confirmPlaybackStarted(
 
 /**
  * Orchestrates queue + audio engine + Zustand (optimistic UI first, then stream).
+ * Native Android uses react-native-track-player for media session + notification.
  */
 export const PlaybackController = {
   async initialize(): Promise<void> {
     await AudioService.initialize();
     AudioService.setStatusListener((status) => {
-      PlaybackController.onAudioStatus(status);
+      PlaybackController.onEngineStatus(status);
     });
   },
 
@@ -212,7 +213,7 @@ export const PlaybackController = {
     await PlaybackController.loadTrack(state.currentSong, queue);
   },
 
-  onAudioStatus(status: AVPlaybackStatus): void {
+  onEngineStatus(status: UnifiedPlaybackStatus): void {
     const state = usePlayerStore.getState();
     if (!state.currentSong) {
       return;
@@ -223,7 +224,7 @@ export const PlaybackController = {
       return;
     }
 
-    const mapped = mapAvStatus(status, state.status);
+    const mapped = mapEngineStatus(status, state.status);
     usePlayerStore.getState().patchPlayback(mapped);
 
     if (
@@ -246,7 +247,7 @@ export const PlaybackController = {
         return;
       }
 
-      await AudioService.load(streamUrl);
+      await AudioService.load({ url: streamUrl, song: track });
       if (token !== loadToken) {
         return;
       }
