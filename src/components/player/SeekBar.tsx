@@ -1,12 +1,15 @@
 import { memo, useCallback, useMemo } from "react";
-import {
-  LayoutChangeEvent,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type GestureResponderEvent,
-} from "react-native";
+import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import Animated, {
+  Extrapolate,
+  interpolate,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 import {
   usePlaybackProgress,
@@ -21,46 +24,147 @@ function formatTime(millis: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+/**
+ * Premium seek bar with Spotify-like interactions:
+ * - Smooth animated progress tracking with Reanimated
+ * - Draggable thumb with visual feedback
+ * - Responsive touch area (44px hit target)
+ * - Interpolated position updates (no jank between 0.5s engine updates)
+ * - Precise seeking without freezing playback
+ */
 function SeekBarComponent() {
   const { positionMillis, durationMillis } = usePlaybackProgress();
   const { seekTo } = usePlayerActions();
+
   const max = Math.max(durationMillis, 1);
   const progress = Math.min(positionMillis / max, 1);
 
-  const seekFromEvent = useCallback(
-    (width: number, locationX: number) => {
-      if (width <= 0) {
-        return;
-      }
-      const ratio = Math.min(Math.max(locationX / width, 0), 1);
-      seekTo(Math.floor(ratio * max));
+  // Shared values for smooth animation
+  const trackWidth = useSharedValue(0);
+  const containerX = useSharedValue(0);
+  const dragX = useSharedValue(0);
+  const isDragging = useSharedValue(false);
+  const animatedProgress = useSharedValue(progress);
+  const thumbScale = useSharedValue(1);
+
+  // Animate progress smoothly between engine updates
+  useAnimatedReaction(
+    () => progress,
+    (currentProgress) => {
+      animatedProgress.value = withSpring(currentProgress, {
+        damping: 20,
+        mass: 0.8,
+        overshootClamping: true,
+      });
     },
-    [max, seekTo],
   );
 
-  const barWidthRef = useMemo(() => ({ current: 0 }), []);
-
+  // Get track measurements on layout
   const onLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      barWidthRef.current = event.nativeEvent.layout.width;
+      trackWidth.value = event.nativeEvent.layout.width;
+      containerX.value = event.nativeEvent.layout.x;
     },
-    [barWidthRef],
+    [trackWidth, containerX],
   );
 
-  const onPress = useCallback(
-    (event: GestureResponderEvent) => {
-      seekFromEvent(barWidthRef.current, event.nativeEvent.locationX);
-    },
-    [barWidthRef, seekFromEvent],
+  // Pan gesture for dragging with proper absolute positioning
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onStart(() => {
+          isDragging.value = true;
+          thumbScale.value = withSpring(1.3, {
+            damping: 20,
+            mass: 0.5,
+          });
+        })
+        .onChange((event) => {
+          // Clamp X to track bounds using absolute position
+          const newX = Math.min(
+            Math.max(event.absoluteX - containerX.value, 0),
+            trackWidth.value,
+          );
+          dragX.value = newX;
+        })
+        .onEnd(() => {
+          if (trackWidth.value > 0) {
+            const ratio = dragX.value / trackWidth.value;
+            const newPosition = Math.floor(ratio * max);
+            runOnJS(seekTo)(newPosition);
+          }
+          isDragging.value = false;
+          thumbScale.value = withSpring(1, {
+            damping: 20,
+            mass: 0.5,
+          });
+        }),
+    [dragX, isDragging, containerX, trackWidth, max, seekTo, thumbScale],
   );
+
+  // Animated style for progress fill (smooth spring animation)
+  const fillAnimatedStyle = useAnimatedStyle(() => {
+    const currentProgress = isDragging.value
+      ? dragX.value / trackWidth.value
+      : animatedProgress.value;
+    const fillWidth = interpolate(
+      currentProgress,
+      [0, 1],
+      [0, trackWidth.value],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      width: fillWidth,
+    };
+  });
+
+  // Animated style for thumb (interactive scale + position)
+  const thumbAnimatedStyle = useAnimatedStyle(() => {
+    const currentProgress = isDragging.value
+      ? dragX.value / trackWidth.value
+      : animatedProgress.value;
+    const thumbX = interpolate(
+      currentProgress,
+      [0, 1],
+      [0, trackWidth.value],
+      Extrapolate.CLAMP,
+    );
+
+    return {
+      transform: [
+        { translateX: thumbX - 6 }, // 12px thumb width, center it
+        { scale: thumbScale.value },
+      ],
+    };
+  });
 
   return (
     <View style={styles.wrap}>
-      <Pressable onLayout={onLayout} onPress={onPress} style={styles.trackHit}>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${progress * 100}%` }]} />
-        </View>
-      </Pressable>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View
+          onLayout={onLayout}
+          style={styles.trackContainer}
+          pointerEvents="box-none"
+        >
+          {/* Background track */}
+          <View style={styles.track}>
+            {/* Animated progress fill */}
+            <Animated.View
+              style={[styles.fill, fillAnimatedStyle]}
+              pointerEvents="none"
+            />
+          </View>
+
+          {/* Draggable thumb */}
+          <Animated.View
+            style={[styles.thumb, thumbAnimatedStyle]}
+            pointerEvents="none"
+          />
+        </Animated.View>
+      </GestureDetector>
+
+      {/* Timestamps */}
       <View style={styles.labels}>
         <Text style={styles.time}>{formatTime(positionMillis)}</Text>
         <Text style={styles.time}>{formatTime(max)}</Text>
@@ -73,27 +177,45 @@ const styles = StyleSheet.create({
   wrap: {
     marginBottom: authSpacing.lg,
   },
-  trackHit: {
-    paddingVertical: authSpacing.sm,
+  trackContainer: {
+    height: 44, // Hit target area (44px per accessibility guidelines)
+    justifyContent: "center",
+    width: "100%",
   },
   track: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: authColors.surfaceHighlight,
     overflow: "hidden",
+    width: "100%",
   },
   fill: {
     height: "100%",
     backgroundColor: authColors.accent,
+    borderRadius: 3,
+  },
+  thumb: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: authColors.accent,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    // Position is controlled by animated transform
   },
   labels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: authSpacing.xs,
+    marginTop: authSpacing.sm,
   },
   time: {
     color: authColors.textMuted,
     fontSize: 12,
+    fontWeight: "500",
   },
 });
 
