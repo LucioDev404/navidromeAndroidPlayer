@@ -67,15 +67,15 @@ If no assets are available yet, replace these placeholders with real screenshots
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| UI | React Native + Expo Router |
-| Language | TypeScript |
-| State | Zustand |
-| Audio | react-native-track-player + expo-av |
-| Networking | Navidrome/Subsonic API clients |
-| Build | Expo SDK 50 |
-| CI | GitHub Actions |
+| Layer      | Technology                          |
+| ---------- | ----------------------------------- |
+| UI         | React Native + Expo Router          |
+| Language   | TypeScript                          |
+| State      | Zustand                             |
+| Audio      | react-native-track-player + expo-av |
+| Networking | Navidrome/Subsonic API clients      |
+| Build      | Expo SDK 50                         |
+| CI         | GitHub Actions                      |
 
 ---
 
@@ -272,12 +272,12 @@ We welcome contributors who care about quality and modern mobile UX.
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| Stale bundle or red screen | `npm run start:clear` then restart Expo |
-| Native build fails after prebuild | `npm run post-prebuild-fix` |
-| Dependency mismatch | `npm run doctor` and re-run install |
-| Local server unreachable | confirm LAN IP, use `10.0.2.2` for Android emulator |
+| Symptom                           | Fix                                                 |
+| --------------------------------- | --------------------------------------------------- |
+| Stale bundle or red screen        | `npm run start:clear` then restart Expo             |
+| Native build fails after prebuild | `npm run post-prebuild-fix`                         |
+| Dependency mismatch               | `npm run doctor` and re-run install                 |
+| Local server unreachable          | confirm LAN IP, use `10.0.2.2` for Android emulator |
 
 ---
 
