@@ -2,8 +2,8 @@ import { ReactNode, useEffect } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 
 import { PlaybackController, AudioService } from "../services/audio";
-import { usePlayerStore } from "../store/usePlayerStore";
 import { useEndpointStore } from "../store/useEndpointStore";
+import { usePlayerStore } from "../store/usePlayerStore";
 import {
   bindRecentlyPlayedToPlayback,
   useRecentlyPlayedStore,

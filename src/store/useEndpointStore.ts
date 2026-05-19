@@ -17,8 +17,8 @@ import {
 } from "../api/subsonic/services/connectionService";
 import { resolveAllowInsecure } from "../network/endpointPolicy";
 import { safeLog } from "../security/safeLog";
-import { PlaybackController } from "../services/audio/PlaybackController";
 import { isSecureStorageNative } from "../security/secureStorage";
+import { PlaybackController } from "../services/audio/PlaybackController";
 import {
   clearActiveEndpointId,
   deleteEndpointCredentials,
