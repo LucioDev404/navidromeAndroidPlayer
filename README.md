@@ -1,7 +1,7 @@
 <!-- prettier-ignore -->
-# Navidrome Player
+# Soundly
 
-<img src="assets/icon.png" alt="Navidrome Player logo" width="96" align="right" />
+<img src="assets/icon.png" alt="Soundly logo" width="96" align="right" />
 
 > A premium self-hosted music player for Navidrome/Subsonic servers — built with React Native + Expo for Android and Web.
 
@@ -16,7 +16,7 @@
 
 ## What is this?
 
-**Navidrome Player** is a polished music client inspired by modern streaming experiences like Spotify and Plexamp. It connects to self-hosted Navidrome or Subsonic servers, giving you mobile and browser access to your music library with queue management, background playback, rich metadata screens, and offline-friendly behavior.
+**Soundly** is a polished music client inspired by modern streaming experiences like Spotify and Plexamp. It connects to self-hosted Navidrome or Subsonic servers, giving you mobile and browser access to your music library with queue management, background playback, rich metadata screens, and offline-friendly behavior.
 
 ### Why it matters
 
@@ -166,7 +166,7 @@ The app supports multiple saved endpoints from the account screen. Use this patt
 
 ## Architecture Overview
 
-Navidrome Player is structured to keep UI, playback, and API concerns separate.
+Soundly is structured to keep UI, playback, and API concerns separate.
 
 ### Key folders
 

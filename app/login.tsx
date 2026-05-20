@@ -107,7 +107,7 @@ export default function LoginScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.brand}>Navidrome Player</Text>
+          <Text style={styles.brand}>Soundly</Text>
           <Text style={styles.subtitle}>
             Sign in to your Navidrome server. Credentials are encrypted on this
             device and your session stays active until you log out.

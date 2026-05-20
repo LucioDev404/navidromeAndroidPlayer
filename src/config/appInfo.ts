@@ -12,7 +12,7 @@ type Extra = {
 const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
 
 export const appInfo = {
-  name: Constants.expoConfig?.name ?? "Navidrome Player",
+  name: Constants.expoConfig?.name ?? "Soundly",
   version: extra.appVersion ?? Constants.expoConfig?.version ?? "1.0.0",
   buildNumber: extra.buildNumber ?? "1",
   environment: extra.environment ?? (__DEV__ ? "development" : "production"),
