@@ -1,18 +1,11 @@
-import { useEffect, useMemo } from "react";
 import { useRouter } from "expo-router";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthGradientBackground } from "../src/components/auth/AuthGradientBackground";
-import useLibraryStore from "../src/store/useLibraryStore";
 import { openGenre } from "../src/navigation/navigationHelpers";
+import useLibraryStore from "../src/store/useLibraryStore";
 import { authColors, authSpacing } from "../src/theme/authTheme";
 
 const GenreCardSkeleton = () => (

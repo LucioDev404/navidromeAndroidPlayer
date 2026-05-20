@@ -14,14 +14,16 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
-import { CachedCover } from "../../src/components/ui/CachedCover";
 import { MediaCarousel } from "../../src/components/library/MediaCarousel";
-import useLibraryStore from "../../src/store/useLibraryStore";
+import { CachedCover } from "../../src/components/ui/CachedCover";
 import { usePlayerActions } from "../../src/store/playerSelectors";
-import { openAlbum, openArtist } from "../../src/navigation/navigationHelpers";
+import useLibraryStore from "../../src/store/useLibraryStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -59,7 +61,9 @@ export default function GenreDetailScreen() {
   const { playSong } = usePlayerActions();
 
   const genreNameRaw = params.name ?? "";
-  const genreName = decodeURIComponent(Array.isArray(genreNameRaw) ? genreNameRaw[0] : genreNameRaw).trim();
+  const genreName = decodeURIComponent(
+    Array.isArray(genreNameRaw) ? genreNameRaw[0] : genreNameRaw,
+  ).trim();
 
   useEffect(() => {
     if (!isHydrated) {
@@ -89,7 +93,10 @@ export default function GenreDetailScreen() {
 
   const filteredArtists = useMemo(() => {
     const artistIds = new Set<string>();
-    const artistsMap = new Map<string, { id: string; name: string; albumCount: number; coverArtUrl?: string }>();
+    const artistsMap = new Map<
+      string,
+      { id: string; name: string; albumCount: number; coverArtUrl?: string }
+    >();
 
     filteredSongs.forEach((song) => {
       const artistId = song.artistId || song.artist;
@@ -149,14 +156,22 @@ export default function GenreDetailScreen() {
 
   const topSongs = useMemo(() => filteredSongs.slice(0, 8), [filteredSongs]);
   const topAlbums = useMemo(() => filteredAlbums.slice(0, 8), [filteredAlbums]);
-  const topArtists = useMemo(() => filteredArtists.slice(0, 8), [filteredArtists]);
+  const topArtists = useMemo(
+    () => filteredArtists.slice(0, 8),
+    [filteredArtists],
+  );
 
   const genreCount =
     filteredSongs.length + filteredAlbums.length + filteredArtists.length;
 
   const handleSongPress = useCallback(
-    (item: typeof filteredSongs[number], index: number) => {
-      playSong(item, filteredSongs, { type: "search" as const, title: genreName }, index);
+    (item: (typeof filteredSongs)[number], index: number) => {
+      playSong(
+        item,
+        filteredSongs,
+        { type: "search" as const, title: genreName },
+        index,
+      );
     },
     [filteredSongs, genreName, playSong],
   );
@@ -180,14 +195,11 @@ export default function GenreDetailScreen() {
             <Text style={styles.genreLabel}>Genre</Text>
             <Text style={styles.title}>{genreName}</Text>
             <Text style={styles.genreSummary} numberOfLines={2}>
-              {filteredSongs.length} songs · {filteredAlbums.length} albums ·{' '}
+              {filteredSongs.length} songs · {filteredAlbums.length} albums ·{" "}
               {filteredArtists.length} artists
             </Text>
           </View>
-          <Pressable
-            style={styles.closeButton}
-            onPress={() => router.back()}
-          >
+          <Pressable style={styles.closeButton} onPress={() => router.back()}>
             <Text style={styles.closeText}>Close</Text>
           </Pressable>
         </View>

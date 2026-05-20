@@ -2,16 +2,13 @@ import { create } from "zustand";
 
 import { useEndpointStore } from "./useEndpointStore";
 import { useLibraryStore } from "./useLibraryStore";
-import type {
-  Album,
-  Artist,
-  Genre,
-  Playlist,
-  Song,
-} from "../api/models/media";
 import { SubsonicMappers } from "../api/mappers/subsonic";
+import type { Album, Artist, Genre, Playlist, Song } from "../api/models/media";
 import type { SubsonicClient } from "../api/subsonic/client/SubsonicClient";
-import { fetchGenres, fetchPlaylists } from "../api/subsonic/services/libraryService";
+import {
+  fetchGenres,
+  fetchPlaylists,
+} from "../api/subsonic/services/libraryService";
 import { searchLibrary } from "../api/subsonic/services/searchService";
 import { safeLog } from "../security/safeLog";
 

@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
-import { memo, useCallback, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import {
-  ActivityIndicator,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -28,7 +27,10 @@ import { useIsAuthenticated } from "../../src/store/useAuthStore";
 import { useSearchStore } from "../../src/store/useSearchStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -121,7 +123,15 @@ export default function SearchTabScreen() {
 
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [query, isSearching, songs.length, albums.length, artists.length, playlists.length, genres.length]);
+  }, [
+    query,
+    isSearching,
+    songs.length,
+    albums.length,
+    artists.length,
+    playlists.length,
+    genres.length,
+  ]);
 
   const searchContext = useMemo(
     () => ({ type: "search" as const, title: "Search" }),
@@ -131,7 +141,11 @@ export default function SearchTabScreen() {
   const normalizedQuery = query.trim();
   const hasQuery = normalizedQuery.length > 0;
   const totalResults =
-    songs.length + albums.length + artists.length + playlists.length + genres.length;
+    songs.length +
+    albums.length +
+    artists.length +
+    playlists.length +
+    genres.length;
 
   const topResult = useMemo(() => {
     if (!hasQuery || isSearching) {
@@ -199,7 +213,19 @@ export default function SearchTabScreen() {
     }
 
     return null;
-  }, [albums, artists, genres, hasQuery, isSearching, playSong, playlists, router, searchContext, setQuery, songs]);
+  }, [
+    albums,
+    artists,
+    genres,
+    hasQuery,
+    isSearching,
+    playSong,
+    playlists,
+    router,
+    searchContext,
+    setQuery,
+    songs,
+  ]);
 
   const songsPreview = useMemo(() => songs.slice(0, 4), [songs]);
   const albumsPreview = useMemo(() => albums.slice(0, 4), [albums]);
@@ -254,8 +280,8 @@ export default function SearchTabScreen() {
           {isSearching
             ? "Searching across songs, albums, artists, playlists and genres..."
             : hasQuery
-            ? `${totalResults} result${totalResults === 1 ? "" : "s"}`
-            : "Start typing to explore your collection."}
+              ? `${totalResults} result${totalResults === 1 ? "" : "s"}`
+              : "Start typing to explore your collection."}
         </Text>
 
         {lastError ? <Text style={styles.error}>{lastError}</Text> : null}
@@ -272,9 +298,12 @@ export default function SearchTabScreen() {
             </>
           ) : !hasQuery ? (
             <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateTitle}>Search premium discovery.</Text>
+              <Text style={styles.emptyStateTitle}>
+                Search premium discovery.
+              </Text>
               <Text style={styles.emptyStateSubtitle}>
-                Use filters and fast results to jump directly to the music you want.
+                Use filters and fast results to jump directly to the music you
+                want.
               </Text>
             </View>
           ) : totalResults === 0 ? (
@@ -290,7 +319,10 @@ export default function SearchTabScreen() {
               {topResult ? (
                 <View style={styles.topResultCard}>
                   <Text style={styles.topSectionLabel}>Top result</Text>
-                  <Pressable style={styles.topCardContent} onPress={topResult.onPress}>
+                  <Pressable
+                    style={styles.topCardContent}
+                    onPress={topResult.onPress}
+                  >
                     <CachedCover
                       uri={topResult.coverUrl}
                       size={120}
@@ -304,7 +336,9 @@ export default function SearchTabScreen() {
                         {topResult.subtitle}
                       </Text>
                       <View style={styles.topCardBadge}>
-                        <Text style={styles.topCardBadgeText}>{topResult.category}</Text>
+                        <Text style={styles.topCardBadgeText}>
+                          {topResult.category}
+                        </Text>
                       </View>
                     </View>
                   </Pressable>
@@ -320,7 +354,9 @@ export default function SearchTabScreen() {
                       title={item.title}
                       subtitle={`${item.artist} · ${item.album}`}
                       coverUrl={item.coverArtUrl}
-                      onPress={() => playSong(item, songs, searchContext, index)}
+                      onPress={() =>
+                        playSong(item, songs, searchContext, index)
+                      }
                     />
                   ))
                 ) : (

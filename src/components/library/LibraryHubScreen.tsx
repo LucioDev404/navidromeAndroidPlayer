@@ -17,12 +17,12 @@ import { LibrarySkeleton } from "./LibrarySkeleton";
 import { MediaCarousel } from "./MediaCarousel";
 import type { Song } from "../../api/models/media";
 import { getScrollBottomInset } from "../../navigation/layoutMetrics";
+import { openGenre } from "../../navigation/navigationHelpers";
 import { usePlayerActions } from "../../store/playerSelectors";
 import { useEndpointStore } from "../../store/useEndpointStore";
 import useLibraryStore from "../../store/useLibraryStore";
 import { useRecentlyPlayedStore } from "../../store/useRecentlyPlayedStore";
 import { authColors, authSpacing } from "../../theme/authTheme";
-import { openGenre } from "../../navigation/navigationHelpers";
 import { AuthGradientBackground } from "../auth/AuthGradientBackground";
 import { SessionBanner } from "../auth/SessionBanner";
 
