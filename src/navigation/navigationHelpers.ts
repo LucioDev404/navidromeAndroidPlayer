@@ -32,6 +32,10 @@ function playlistHref(playlistId: string): RoutePushTarget {
   };
 }
 
+function genreHref(genreName: string): RoutePushTarget {
+  return `/genre/${encodeURIComponent(genreName)}`;
+}
+
 export function openAlbum(router: RouterLike, albumId: string): void {
   const id = albumId?.trim();
   if (!id) {
@@ -63,6 +67,17 @@ export function openPlaylist(router: RouterLike, playlistId: string): void {
 
   logger.debug("nav:openPlaylist", { id });
   router.push(playlistHref(id));
+}
+
+export function openGenre(router: RouterLike, genreName: string): void {
+  const name = genreName?.trim();
+  if (!name) {
+    logger.warn("openGenre: missing genre name");
+    return;
+  }
+
+  logger.debug("nav:openGenre", { name });
+  router.push(genreHref(name));
 }
 
 export function openFullPlayer(router: RouterLike): void {

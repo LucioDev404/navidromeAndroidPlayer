@@ -8,6 +8,7 @@ export type LibraryFilter =
   | "artists"
   | "songs"
   | "playlists"
+  | "genres"
   | "recent";
 
 const FILTERS: { key: LibraryFilter; label: string }[] = [
@@ -17,6 +18,7 @@ const FILTERS: { key: LibraryFilter; label: string }[] = [
   { key: "artists", label: "Artists" },
   { key: "songs", label: "Songs" },
   { key: "playlists", label: "Playlists" },
+  { key: "genres", label: "Genres" },
 ];
 
 interface LibraryFilterChipsProps {

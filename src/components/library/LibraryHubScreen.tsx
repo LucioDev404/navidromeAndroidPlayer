@@ -22,6 +22,7 @@ import { useEndpointStore } from "../../store/useEndpointStore";
 import useLibraryStore from "../../store/useLibraryStore";
 import { useRecentlyPlayedStore } from "../../store/useRecentlyPlayedStore";
 import { authColors, authSpacing } from "../../theme/authTheme";
+import { openGenre } from "../../navigation/navigationHelpers";
 import { AuthGradientBackground } from "../auth/AuthGradientBackground";
 import { SessionBanner } from "../auth/SessionBanner";
 
@@ -101,6 +102,7 @@ export function LibraryHubScreen() {
       showArtists: show(["all", "artists"]),
       showSongs: show(["all", "songs"]),
       showPlaylists: show(["all", "playlists"]),
+      showGenres: show(["all", "genres"]),
     };
   }, [filter]);
 
@@ -213,14 +215,33 @@ export function LibraryHubScreen() {
           />
         ) : null}
 
-        {filter === "all" && library.genres.length > 0 ? (
-          <View style={styles.genres}>
-            <Text style={styles.genresTitle}>Genres</Text>
-            {library.genres.slice(0, 8).map((genre) => (
-              <Text key={genre.name} style={styles.genreItem}>
-                {genre.name}
-              </Text>
-            ))}
+        {sections.showGenres && library.genres.length > 0 ? (
+          <View style={styles.genresSection}>
+            <View style={styles.genreHeaderRow}>
+              <Text style={styles.genresTitle}>Genres</Text>
+              {filter === "all" ? (
+                <Pressable
+                  onPress={() => router.push("/genres")}
+                  style={styles.genresAction}
+                >
+                  <Text style={styles.genresActionText}>See all</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            <View style={styles.genreGrid}>
+              {library.genres.slice(0, 12).map((genre) => (
+                <Pressable
+                  key={genre.name}
+                  style={styles.genreCard}
+                  onPress={() => openGenre(router, genre.name)}
+                >
+                  <Text style={styles.genreCardTitle}>{genre.name}</Text>
+                  <Text style={styles.genreCardSubtitle} numberOfLines={2}>
+                    {genre.songCount} songs · {genre.albumCount} albums
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         ) : null}
 
@@ -271,20 +292,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: authSpacing.lg,
     marginBottom: authSpacing.sm,
   },
-  genres: {
+  genresSection: {
     paddingHorizontal: authSpacing.lg,
     marginBottom: authSpacing.lg,
+  },
+  genreHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: authSpacing.sm,
   },
   genresTitle: {
     color: authColors.textPrimary,
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: authSpacing.sm,
   },
-  genreItem: {
-    color: authColors.textSecondary,
+  genresAction: {
+    paddingHorizontal: authSpacing.sm,
+    paddingVertical: authSpacing.xs,
+  },
+  genresActionText: {
+    color: authColors.accent,
     fontSize: 13,
-    marginBottom: 6,
+    fontWeight: "700",
+  },
+  genreGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -4,
+  },
+  genreCard: {
+    width: "48%",
+    margin: 4,
+    borderRadius: authSpacing.lg,
+    padding: authSpacing.md,
+    backgroundColor: authColors.surface,
+    borderWidth: 1,
+    borderColor: authColors.border,
+  },
+  genreCardTitle: {
+    color: authColors.textPrimary,
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: authSpacing.xs,
+  },
+  genreCardSubtitle: {
+    color: authColors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
   },
   emptyWrap: {
     paddingHorizontal: authSpacing.lg,

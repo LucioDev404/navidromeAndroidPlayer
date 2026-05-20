@@ -20,6 +20,7 @@ import { getScrollBottomInset } from "../../src/navigation/layoutMetrics";
 import {
   openAlbum,
   openArtist,
+  openGenre,
   openPlaylist,
 } from "../../src/navigation/navigationHelpers";
 import { usePlayerActions } from "../../src/store/playerSelectors";
@@ -386,7 +387,7 @@ export default function SearchTabScreen() {
                       <Pressable
                         key={`genre-${item.name}`}
                         style={styles.genreChip}
-                        onPress={() => setQuery(item.name)}
+                        onPress={() => openGenre(router, item.name)}
                       >
                         <Text style={styles.genreChipText}>{item.name}</Text>
                         <Text style={styles.genreChipCount}>
