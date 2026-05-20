@@ -1,5 +1,5 @@
 import { SubsonicMappers } from "../../mappers/subsonic";
-import type { Album, Artist, Song } from "../../models/media";
+import type { Album, Artist, Genre, Playlist, Song } from "../../models/media";
 import { SubsonicClient } from "../client/SubsonicClient";
 import { SUBSONIC_PATHS } from "../endpoints/paths";
 import type {
@@ -15,6 +15,8 @@ export interface SearchResults {
   artists: Artist[];
   albums: Album[];
   songs: Song[];
+  playlists: Playlist[];
+  genres: Genre[];
 }
 
 export async function searchLibrary(
@@ -24,7 +26,13 @@ export async function searchLibrary(
 ): Promise<SearchResults> {
   const trimmed = query.trim();
   if (!trimmed) {
-    return { artists: [], albums: [], songs: [] };
+    return {
+      artists: [],
+      albums: [],
+      songs: [],
+      playlists: [],
+      genres: [],
+    };
   }
 
   const payload = await client.request<Record<string, unknown>>(
@@ -49,5 +57,7 @@ export async function searchLibrary(
     artists: mappers.mapArtists(client, asArray(result?.artist)),
     albums: mappers.mapAlbums(client, asArray(result?.album)),
     songs: mappers.mapSongs(client, asArray(result?.song)),
+    playlists: [],
+    genres: [],
   };
 }
