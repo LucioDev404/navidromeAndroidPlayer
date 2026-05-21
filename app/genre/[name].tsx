@@ -58,7 +58,7 @@ export default function GenreDetailScreen() {
   const library = useLibraryStore((s) => s.library);
   const isLoading = useLibraryStore((s) => s.isLoading);
   const isHydrated = useLibraryStore((s) => s.isHydrated);
-  const { playSong } = usePlayerActions();
+  const { playSong, playQueue } = usePlayerActions();
 
   const genreNameRaw = params.name ?? "";
   const genreName = decodeURIComponent(
@@ -166,15 +166,25 @@ export default function GenreDetailScreen() {
 
   const handleSongPress = useCallback(
     (item: (typeof filteredSongs)[number], index: number) => {
-      playSong(
-        item,
-        filteredSongs,
-        { type: "search" as const, title: genreName },
-        index,
+      playSong(item, filteredSongs, {
+        type: "library",
+        id: `genre:${genreName}`,
+        title: genreName,
+      },
+      index,
       );
     },
     [filteredSongs, genreName, playSong],
   );
+
+  const handlePlayAll = useCallback(() => {
+    if (!filteredSongs || filteredSongs.length === 0) return;
+    playQueue(filteredSongs, 0, {
+      type: "library",
+      id: `genre:${genreName}`,
+      title: genreName,
+    });
+  }, [filteredSongs, genreName, playQueue]);
 
   if (!genreName) {
     return null;
@@ -199,9 +209,14 @@ export default function GenreDetailScreen() {
               {filteredArtists.length} artists
             </Text>
           </View>
-          <Pressable style={styles.closeButton} onPress={() => router.back()}>
-            <Text style={styles.closeText}>Close</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Pressable style={styles.playButton} onPress={handlePlayAll}>
+              <Text style={styles.playButtonText}>Play All</Text>
+            </Pressable>
+            <Pressable style={styles.closeButton} onPress={() => router.back()}>
+              <Text style={styles.closeText}>Close</Text>
+            </Pressable>
+          </View>
         </View>
 
         {isLoading && !isHydrated ? (
@@ -328,6 +343,17 @@ const styles = StyleSheet.create({
   closeText: {
     color: authColors.accent,
     fontWeight: "700",
+  },
+  playButton: {
+    backgroundColor: authColors.accent,
+    paddingHorizontal: authSpacing.md,
+    paddingVertical: authSpacing.sm,
+    borderRadius: authSpacing.sm,
+    marginRight: authSpacing.sm,
+  },
+  playButtonText: {
+    color: authColors.surface,
+    fontWeight: "800",
   },
   loadingState: {
     padding: authSpacing.lg,
