@@ -305,13 +305,13 @@ export default function SearchTabScreen() {
     const appendSection = (
       title: string,
       count: number,
-      preview: Array<{
+      preview: {
         id: string;
         title: string;
         subtitle: string;
         coverUrl?: string;
         onPress: () => void;
-      }>,
+      }[],
       emptyMessage: string,
     ) => {
       items.push({
@@ -459,15 +459,15 @@ export default function SearchTabScreen() {
     [insets.bottom],
   );
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   const skeletonItems = useMemo(
     () =>
       Array.from({ length: 3 }, (_, index) => ({ key: `skeleton-${index}` })),
     [],
   );
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <AuthGradientBackground>

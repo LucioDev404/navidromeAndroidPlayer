@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { authColors, authSpacing } from "../../theme/authTheme";
@@ -25,8 +26,10 @@ export function GenreCard({
   return (
     <Pressable
       onPress={onPress}
-      style={styles.card}
-      accessibilityLabel={`Open ${name}`}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      android_ripple={{ color: "rgba(255,255,255,0.14)" }}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityLabel={onPress ? `Open ${name}` : undefined}
     >
       <LinearGradient colors={colors} style={styles.gradient}>
         <View style={styles.inner}>
@@ -47,11 +50,20 @@ export function GenreCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: "48%",
-    minHeight: 120,
-    marginBottom: authSpacing.sm,
+    flex: 1,
+    minHeight: 140,
     borderRadius: authSpacing.lg,
     overflow: "hidden",
+    backgroundColor: authColors.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowOpacity: 0.18,
   },
   gradient: {
     flex: 1,
@@ -80,4 +92,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GenreCard;
+export default memo(GenreCard);

@@ -1,8 +1,14 @@
+import { useMemo } from "react";
 import { shallow } from "zustand/shallow";
 
 import { usePlayerStore } from "./usePlayerStore";
 import type { Song } from "../api/models/media";
 import type { PlaybackStatus, QueueContext } from "../services/audio/types";
+
+const normalizeContextId = (id?: string) => id?.trim().toLowerCase();
+const buildGenreContextId = (genreName: string) =>
+  `genre:${genreName.trim().toLowerCase()}`;
+const buildEntityContextId = (id: string) => id.trim();
 
 /** Stable action references — components that only call actions won't re-render on track change. */
 export function usePlayerActions() {
@@ -57,6 +63,20 @@ export function useHasActiveTrack(): boolean {
   return usePlayerStore((s) => s.currentSong != null);
 }
 
+export function useMiniPlayerState(segments: string[]) {
+  const hasTrack = usePlayerStore((s) => Boolean(s.currentSong));
+  const showTabBar = segments[0] === "(tabs)";
+  const isPlayerModalActive = segments.includes("player");
+
+  return useMemo(
+    () => ({
+      visible: hasTrack && !isPlayerModalActive,
+      showTabBar,
+    }),
+    [hasTrack, isPlayerModalActive, showTabBar],
+  );
+}
+
 export function useActiveQueueIndex(): number {
   return usePlayerStore((s) => s.activeIndex);
 }
@@ -82,22 +102,28 @@ export function usePlaybackProgress() {
 
 /** True when the current queue is this album (for highlight sync). */
 export function useIsAlbumQueue(albumId: string): boolean {
-  return usePlayerStore(
-    (s) => s.queueContext?.type === "album" && s.queueContext.id === albumId,
-  );
+  return usePlayerStore((s) => {
+    return (
+      s.queueContext?.type === "album" &&
+      normalizeContextId(s.queueContext.id) === buildEntityContextId(albumId)
+    );
+  });
 }
 
 export function useIsPlaylistQueue(playlistId: string): boolean {
-  return usePlayerStore(
-    (s) =>
-      s.queueContext?.type === "playlist" && s.queueContext.id === playlistId,
-  );
+  return usePlayerStore((s) => {
+    return (
+      s.queueContext?.type === "playlist" &&
+      normalizeContextId(s.queueContext.id) === buildEntityContextId(playlistId)
+    );
+  });
 }
 
 export function useIsGenreQueue(genreName: string): boolean {
-  return usePlayerStore(
-    (s) =>
+  return usePlayerStore((s) => {
+    return (
       s.queueContext?.type === "genre" &&
-      s.queueContext.id === `genre:${genreName}`,
-  );
+      normalizeContextId(s.queueContext.id) === buildGenreContextId(genreName)
+    );
+  });
 }

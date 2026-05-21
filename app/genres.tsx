@@ -1,11 +1,11 @@
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { fetchGenres } from "../src/api/subsonic/services/libraryService";
 import { AuthGradientBackground } from "../src/components/auth/AuthGradientBackground";
-import GenreCard from "../src/components/library/GenreCard";
+import GenreGrid from "../src/components/library/GenreGrid";
 import { openGenre } from "../src/navigation/navigationHelpers";
 import { useEndpointStore } from "../src/store/useEndpointStore";
 import useLibraryStore from "../src/store/useLibraryStore";
@@ -19,15 +19,8 @@ type GenreListItem =
       name: string;
       songCount: number;
       albumCount: number;
+      coverUrl?: string;
     };
-
-const GenreCardSkeleton = () => (
-  <View style={styles.genreCard}>
-    <View style={styles.skeletonBlock} />
-    <View style={styles.skeletonLineShort} />
-    <View style={styles.skeletonLineLong} />
-  </View>
-);
 
 export default function GenresScreen() {
   const router = useRouter();
@@ -98,37 +91,6 @@ export default function GenresScreen() {
     [genres, isLoading],
   );
 
-  const renderGenreItem = useCallback(
-    ({
-      item,
-    }: {
-      item:
-        | { key: string; skeleton: true }
-        | {
-            key: string;
-            skeleton: false;
-            name: string;
-            songCount: number;
-            albumCount: number;
-          };
-    }) => {
-      if (item.skeleton) {
-        return <GenreCardSkeleton />;
-      }
-
-      return (
-        <GenreCard
-          key={item.name}
-          name={item.name}
-          songCount={item.songCount}
-          albumCount={item.albumCount}
-          onPress={() => openGenre(router, item.name)}
-        />
-      );
-    },
-    [openGenre, router],
-  );
-
   const renderHeader = useMemo(
     () => (
       <>
@@ -173,12 +135,9 @@ export default function GenresScreen() {
 
   return (
     <AuthGradientBackground>
-      <FlatList
+      <GenreGrid
         data={genreData}
-        renderItem={renderGenreItem}
-        keyExtractor={(item) => item.key}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
+        onPressGenre={(genreName) => openGenre(router, genreName)}
         contentContainerStyle={[
           styles.content,
           {
@@ -187,13 +146,8 @@ export default function GenresScreen() {
             paddingHorizontal: authSpacing.lg,
           },
         ]}
-        showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
         ListFooterComponent={renderEmpty}
-        initialNumToRender={8}
-        maxToRenderPerBatch={12}
-        windowSize={6}
-        removeClippedSubviews
       />
     </AuthGradientBackground>
   );
@@ -243,52 +197,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: authSpacing.lg,
-  },
-  columnWrapper: {
-    justifyContent: "space-between",
-    marginBottom: authSpacing.sm,
-  },
-  genreCard: {
-    width: "48%",
-    minHeight: 120,
-    marginBottom: authSpacing.sm,
-    borderRadius: authSpacing.lg,
-    backgroundColor: authColors.surface,
-    borderWidth: 1,
-    borderColor: authColors.border,
-    padding: authSpacing.md,
-    justifyContent: "space-between",
-  },
-  genreCardTitle: {
-    color: authColors.textPrimary,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: authSpacing.xs,
-  },
-  genreCardSubtitle: {
-    color: authColors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  skeletonBlock: {
-    width: "70%",
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: authColors.border,
-    marginBottom: authSpacing.sm,
-  },
-  skeletonLineShort: {
-    width: "40%",
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: authColors.border,
-    marginBottom: authSpacing.xs,
-  },
-  skeletonLineLong: {
-    width: "80%",
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: authColors.border,
   },
   emptyState: {
     paddingTop: authSpacing.lg,

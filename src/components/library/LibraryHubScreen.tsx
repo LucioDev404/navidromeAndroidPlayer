@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AlbumGridSection } from "./AlbumGridSection";
+import GenreGrid, { type GenreGridItem } from "./GenreGrid";
 import { LibraryFilterChips, type LibraryFilter } from "./LibraryFilterChips";
 import { LibrarySkeleton } from "./LibrarySkeleton";
 import { MediaCarousel } from "./MediaCarousel";
@@ -105,6 +106,23 @@ export function LibraryHubScreen() {
       showGenres: show(["all", "genres"]),
     };
   }, [filter]);
+
+  const genrePreviewData = useMemo<GenreGridItem[]>(
+    () =>
+      isLoading && library.genres.length === 0
+        ? Array.from({ length: 8 }, (_, index) => ({
+            key: `skeleton-${index}`,
+            skeleton: true,
+          }))
+        : library.genres.slice(0, 12).map((genre) => ({
+            key: genre.name,
+            skeleton: false,
+            name: genre.name,
+            songCount: genre.songCount ?? 0,
+            albumCount: genre.albumCount ?? 0,
+          })),
+    [isLoading, library.genres],
+  );
 
   const isEmptyLibrary =
     library.albums.length === 0 &&
@@ -215,7 +233,7 @@ export function LibraryHubScreen() {
           />
         ) : null}
 
-        {sections.showGenres && library.genres.length > 0 ? (
+        {sections.showGenres ? (
           <View style={styles.genresSection}>
             <View style={styles.genreHeaderRow}>
               <Text style={styles.genresTitle}>Genres</Text>
@@ -228,20 +246,20 @@ export function LibraryHubScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <View style={styles.genreGrid}>
-              {library.genres.slice(0, 12).map((genre) => (
-                <Pressable
-                  key={genre.name}
-                  style={styles.genreCard}
-                  onPress={() => openGenre(router, genre.name)}
-                >
-                  <Text style={styles.genreCardTitle}>{genre.name}</Text>
-                  <Text style={styles.genreCardSubtitle} numberOfLines={2}>
-                    {genre.songCount} songs · {genre.albumCount} albums
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <GenreGrid
+              data={genrePreviewData}
+              onPressGenre={(genreName: string) => openGenre(router, genreName)}
+              ListEmptyComponent={
+                !isLoading && library.genres.length === 0 ? (
+                  <View style={styles.emptyWrap}>
+                    <Text style={styles.emptyTitle}>No genres available</Text>
+                    <Text style={styles.emptyBody}>
+                      This server has not exposed any genres yet.
+                    </Text>
+                  </View>
+                ) : null
+              }
+            />
           </View>
         ) : null}
 

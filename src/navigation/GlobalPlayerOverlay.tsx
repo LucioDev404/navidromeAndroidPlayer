@@ -1,9 +1,9 @@
 import { useSegments } from "expo-router";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { MiniPlayer } from "./MiniPlayer";
-import { useHasActiveTrack } from "../store/playerSelectors";
+import { useMiniPlayerState } from "../store/playerSelectors";
 
 /**
  * Root-level mini player — visible on tabs AND album/artist stack screens.
@@ -11,32 +11,15 @@ import { useHasActiveTrack } from "../store/playerSelectors";
  */
 function GlobalPlayerOverlayComponent() {
   const segments = useSegments();
-  const hasTrack = useHasActiveTrack();
+  const miniPlayer = useMiniPlayerState(segments);
 
-  // Check if the full player modal (/player) is currently active.
-  // The player route is presented as fullScreenModal, so when it's active,
-  // we should hide the mini player to avoid overlay conflicts and duplicates.
-  const isPlayerModalActive = useMemo(() => {
-    return segments.includes("player");
-  }, [segments]);
-
-  const showTabBar = useMemo(() => {
-    const root = segments[0];
-    return root === "(tabs)";
-  }, [segments]);
-
-  if (!hasTrack) {
-    return null;
-  }
-
-  // Always hide mini player when full player is active
-  if (isPlayerModalActive) {
+  if (!miniPlayer.visible) {
     return null;
   }
 
   return (
     <View style={styles.host} pointerEvents="box-none" collapsable={false}>
-      <MiniPlayer showTabBar={showTabBar} />
+      <MiniPlayer showTabBar={miniPlayer.showTabBar} />
     </View>
   );
 }
