@@ -39,9 +39,6 @@ function SeekBarComponent() {
 
   const progress = Math.min(positionMillis / max, 1);
 
-  /**
-   * Shared values
-   */
   const trackWidth = useSharedValue(0);
 
   const dragX = useSharedValue(0);
@@ -53,9 +50,10 @@ function SeekBarComponent() {
   const thumbScale = useSharedValue(1);
 
   /**
-   * Sync player progress -> UI
-   * Disabled during drag
+   * Used to know if drag started from thumb
    */
+  const canDrag = useSharedValue(false);
+
   useAnimatedReaction(
     () => progress,
     (p) => {
@@ -67,9 +65,6 @@ function SeekBarComponent() {
     },
   );
 
-  /**
-   * Current rendered progress
-   */
   const currentProgress = useDerivedValue(() => {
     if (isDragging.value) {
       return dragX.value / trackWidth.value;
@@ -78,27 +73,31 @@ function SeekBarComponent() {
     return localProgress.value;
   });
 
-  /**
-   * Track measurement
-   */
   const onLayout = useCallback((event: LayoutChangeEvent) => {
     trackWidth.value = event.nativeEvent.layout.width;
   }, []);
 
-  /**
-   * Thumb-only gesture
-   */
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
-        .hitSlop(20)
 
-        .onStart(() => {
+        .onBegin((event) => {
+          const thumbX = currentProgress.value * trackWidth.value;
+
+          /**
+           * Allow drag ONLY if touch starts near thumb
+           */
+          const distanceFromThumb = Math.abs(event.x - thumbX);
+
+          canDrag.value = distanceFromThumb <= 30;
+
+          if (!canDrag.value) return;
+
           isDragging.value = true;
 
           cancelAnimation(localProgress);
 
-          dragX.value = currentProgress.value * trackWidth.value;
+          dragX.value = thumbX;
 
           thumbScale.value = withSpring(1.15, {
             damping: 18,
@@ -107,6 +106,8 @@ function SeekBarComponent() {
         })
 
         .onChange((event) => {
+          if (!canDrag.value) return;
+
           dragX.value = Math.min(
             Math.max(dragX.value + event.changeX, 0),
             trackWidth.value,
@@ -114,16 +115,14 @@ function SeekBarComponent() {
         })
 
         .onEnd(() => {
+          if (!canDrag.value) return;
+
           const ratio = dragX.value / trackWidth.value;
 
           const newPosition = Math.floor(ratio * max);
 
           runOnJS(seekTo)(newPosition);
 
-          /**
-           * Smooth release transition
-           * avoids snap/glitch
-           */
           localProgress.value = withTiming(ratio, {
             duration: 150,
           });
@@ -133,30 +132,21 @@ function SeekBarComponent() {
             stiffness: 220,
           });
 
-          /**
-           * Delay release
-           * prevents player sync glitch
-           */
           setTimeout(() => {
             isDragging.value = false;
           }, 150);
+
+          canDrag.value = false;
         }),
     [max, seekTo],
   );
 
-  /**
-   * Fill animation
-   */
   const fillAnimatedStyle = useAnimatedStyle(() => {
     return {
       width: currentProgress.value * trackWidth.value,
     };
   });
 
-  /**
-   * Thumb animation
-   * NO timing here -> zero latency
-   */
   const thumbAnimatedStyle = useAnimatedStyle(() => {
     const x = currentProgress.value * trackWidth.value;
 
@@ -176,22 +166,19 @@ function SeekBarComponent() {
 
   return (
     <View style={styles.wrap}>
-      <Animated.View onLayout={onLayout} style={styles.trackContainer}>
-        {/* Track */}
-        <View style={styles.track}>
-          <Animated.View style={[styles.fill, fillAnimatedStyle]} />
-        </View>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View onLayout={onLayout} style={styles.trackContainer}>
+          {/* Track */}
+          <View style={styles.track}>
+            <Animated.View style={[styles.fill, fillAnimatedStyle]} />
+          </View>
 
-        {/* Thumb */}
-        <Animated.View style={[styles.thumb, thumbAnimatedStyle]}>
-          {/* Invisible mobile hitbox */}
-          <GestureDetector gesture={panGesture}>
-            <Animated.View style={styles.thumbHitbox} />
-          </GestureDetector>
+          {/* Thumb */}
+          <Animated.View style={[styles.thumb, thumbAnimatedStyle]} />
         </Animated.View>
-      </Animated.View>
+      </GestureDetector>
 
-      {/* Time labels */}
+      {/* Labels */}
       <View style={styles.labels}>
         <Text style={styles.time}>{formatTime(positionMillis)}</Text>
 
@@ -230,9 +217,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  /**
-   * Visible thumb
-   */
   thumb: {
     position: "absolute",
 
@@ -255,22 +239,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
 
     elevation: 5,
-  },
-
-  /**
-   * Invisible touch area
-   * MUCH easier on mobile
-   */
-  thumbHitbox: {
-    position: "absolute",
-
-    width: 44,
-    height: 44,
-
-    left: -15,
-    top: -15,
-
-    borderRadius: 999,
   },
 
   labels: {

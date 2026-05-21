@@ -6,11 +6,7 @@
     "scheme": "navidrome-player",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "android": {
       "package": "com.navidrome.player",
       "usesCleartextTraffic": true,
@@ -28,9 +24,7 @@
       "enabled": false,
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "web": {
       "bundler": "metro"
     },
@@ -53,9 +47,7 @@
               "NSAppTransportSecurity": {
                 "NSAllowsLocalNetworking": true
               },
-              "UIBackgroundModes": [
-                "audio"
-              ]
+              "UIBackgroundModes": ["audio"]
             }
           }
         }
