@@ -166,12 +166,15 @@ export default function GenreDetailScreen() {
 
   const handleSongPress = useCallback(
     (item: (typeof filteredSongs)[number], index: number) => {
-      playSong(item, filteredSongs, {
-        type: "library",
-        id: `genre:${genreName}`,
-        title: genreName,
-      },
-      index,
+      playSong(
+        item,
+        filteredSongs,
+        {
+          type: "library",
+          id: `genre:${genreName}`,
+          title: genreName,
+        },
+        index,
       );
     },
     [filteredSongs, genreName, playSong],

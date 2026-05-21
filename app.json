@@ -6,16 +6,8 @@
     "scheme": "navidrome-player",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-<<<<<<< HEAD
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
-=======
     "platforms": ["ios", "android", "web"],
     "jsEngine": "hermes",
->>>>>>> ade4031 (refactor: enhance GenreDetailScreen with playQueue functionality and add Play All button; update app.json for asset bundle patterns)
     "android": {
       "package": "com.navidrome.player",
       "usesCleartextTraffic": true,
@@ -33,13 +25,7 @@
       "enabled": false,
       "fallbackToCacheTimeout": 0
     },
-<<<<<<< HEAD
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-=======
     "assetBundlePatterns": ["assets/**"],
->>>>>>> ade4031 (refactor: enhance GenreDetailScreen with playQueue functionality and add Play All button; update app.json for asset bundle patterns)
     "web": {
       "bundler": "metro"
     },
@@ -62,9 +48,7 @@
               "NSAppTransportSecurity": {
                 "NSAllowsLocalNetworking": true
               },
-              "UIBackgroundModes": [
-                "audio"
-              ]
+              "UIBackgroundModes": ["audio"]
             }
           }
         }

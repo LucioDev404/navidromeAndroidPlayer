@@ -1,8 +1,6 @@
 import { memo, useCallback } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
-
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
-
 import Animated, {
   cancelAnimation,
   runOnJS,
@@ -18,7 +16,6 @@ import {
   usePlaybackProgress,
   usePlayerActions,
 } from "../../store/playerSelectors";
-
 import { authColors, authSpacing } from "../../theme/authTheme";
 
 function formatTime(millis: number): string {
@@ -77,9 +74,12 @@ function SeekBarComponent() {
     return localProgress.value;
   });
 
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    trackWidth.value = event.nativeEvent.layout.width;
-  }, []);
+  const onLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      trackWidth.value = event.nativeEvent.layout.width;
+    },
+    [trackWidth],
+  );
 
   /**
    * Gesture
