@@ -19,7 +19,6 @@ export type GenreGridItem =
       name: string;
       songCount: number;
       albumCount: number;
-      coverUrl?: string;
     };
 
 interface GenreGridProps {
@@ -79,7 +78,6 @@ function GenreGrid({
             name={item.name}
             songCount={item.songCount}
             albumCount={item.albumCount}
-            coverUrl={item.coverUrl}
             onPress={() => onPressGenre(item.name)}
           />
         </View>
@@ -118,7 +116,8 @@ const styles = StyleSheet.create({
   },
   itemWrapper: {
     flex: 1,
-    marginBottom: authSpacing.sm,
+    marginBottom: authSpacing.lg,
+    paddingHorizontal: authSpacing.xs,
   },
   skeletonCard: {
     flex: 1,

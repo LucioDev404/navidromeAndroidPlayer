@@ -3,14 +3,11 @@ import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { authColors, authSpacing } from "../../theme/authTheme";
-import { genreGradient } from "../../utils/genreColors";
-import { CachedCover } from "../ui/CachedCover";
 
 interface GenreCardProps {
   name: string;
   songCount?: number;
   albumCount?: number;
-  coverUrl?: string;
   onPress?: () => void;
 }
 
@@ -18,10 +15,9 @@ export function GenreCard({
   name,
   songCount,
   albumCount,
-  coverUrl,
   onPress,
 }: GenreCardProps) {
-  const colors = genreGradient(name);
+  const colors = [authColors.surfaceHighlight, authColors.surface];
 
   return (
     <Pressable
@@ -41,7 +37,6 @@ export function GenreCard({
               {songCount ?? 0} songs · {albumCount ?? 0} albums
             </Text>
           </View>
-          <CachedCover uri={coverUrl} size={56} borderRadius={12} />
         </View>
       </LinearGradient>
     </Pressable>
@@ -80,14 +75,14 @@ const styles = StyleSheet.create({
     paddingRight: authSpacing.sm,
   },
   title: {
-    color: authColors.surface,
+    color: authColors.textPrimary,
     fontSize: 16,
     fontWeight: "800",
     marginBottom: authSpacing.xs,
   },
   subtitle: {
-    color: authColors.surface,
-    opacity: 0.9,
+    color: authColors.textSecondary,
+    opacity: 0.95,
     fontSize: 12,
   },
 });
