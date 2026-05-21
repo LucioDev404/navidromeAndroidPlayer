@@ -26,25 +26,31 @@ function PlayerTrackHeaderComponent({
 
   return (
     <View style={styles.wrap}>
-      <CachedCover
-        uri={song.coverArtUrl}
-        size={artSize}
-        borderRadius={16}
-        style={styles.art}
-      />
+      <View style={styles.artWrap}>
+        <CachedCover
+          uri={song.coverArtUrl}
+          size={artSize}
+          borderRadius={20}
+          style={styles.art}
+        />
+      </View>
       <Text style={styles.title}>{song.title}</Text>
-      {song.artistId ? (
-        <Pressable
-          onPress={openArtistDetail}
-          accessibilityRole="button"
-          accessibilityLabel={`Open artist ${song.artist}`}
-        >
-          <Text style={styles.artist}>{song.artist}</Text>
-        </Pressable>
-      ) : (
+      <Pressable
+        onPress={openArtistDetail}
+        accessibilityRole="button"
+        accessibilityLabel={`Open artist ${song.artist}`}
+        style={({ pressed }) => [
+          styles.artistButton,
+          pressed && styles.pressed,
+        ]}
+      >
         <Text style={styles.artist}>{song.artist}</Text>
-      )}
-      <Text style={styles.album}>{song.album}</Text>
+      </Pressable>
+      <View style={styles.metaRow}>
+        <Text style={styles.album}>{song.album}</Text>
+        {song.year ? <Text style={styles.dot}>•</Text> : null}
+        {song.year ? <Text style={styles.year}>{song.year}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -53,26 +59,57 @@ const styles = StyleSheet.create({
   wrap: {
     marginBottom: authSpacing.lg,
   },
+  artWrap: {
+    marginBottom: authSpacing.lg,
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+    elevation: 12,
+  },
   art: {
     width: "100%",
     maxWidth: 360,
     alignSelf: "center",
-    marginBottom: authSpacing.lg,
   },
   title: {
     color: authColors.textPrimary,
     fontSize: 28,
     fontWeight: "800",
   },
+  artistButton: {
+    marginTop: authSpacing.sm,
+    paddingVertical: authSpacing.xs,
+  },
   artist: {
-    color: authColors.textSecondary,
+    color: authColors.accent,
     fontSize: 18,
-    marginTop: 8,
+    fontWeight: "600",
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: authSpacing.xs,
+    marginTop: authSpacing.sm,
   },
   album: {
-    color: authColors.textMuted,
+    color: authColors.textSecondary,
     fontSize: 14,
-    marginTop: 4,
+  },
+  dot: {
+    color: authColors.textSecondary,
+    fontSize: 14,
+    marginHorizontal: authSpacing.xs,
+  },
+  year: {
+    color: authColors.textSecondary,
+    fontSize: 14,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
 

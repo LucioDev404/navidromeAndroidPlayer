@@ -1,10 +1,13 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { fetchGenres } from "../src/api/subsonic/services/libraryService";
 import { AuthGradientBackground } from "../src/components/auth/AuthGradientBackground";
+import GenreCard from "../src/components/library/GenreCard";
 import { openGenre } from "../src/navigation/navigationHelpers";
+import { useEndpointStore } from "../src/store/useEndpointStore";
 import useLibraryStore from "../src/store/useLibraryStore";
 import { authColors, authSpacing } from "../src/theme/authTheme";
 
@@ -30,9 +33,43 @@ export default function GenresScreen() {
     }
   }, [isHydrated, loadLibrary]);
 
+  const [fallbackGenres, setFallbackGenres] = useState(library.genres);
+
+  useEffect(() => {
+    setFallbackGenres(library.genres);
+  }, [library.genres]);
+
+  useEffect(() => {
+    // If library has no genres but we have a connected endpoint, try fetching getGenres directly
+    async function load() {
+      if ((library.genres?.length ?? 0) > 0) return;
+      const endpoint = useEndpointStore.getState().getActiveEndpoint();
+      if (!endpoint || !useEndpointStore.getState().isSessionAuthenticated)
+        return;
+      try {
+        const client = await useEndpointStore.getState().getActiveClient();
+        if (!client) return;
+        const raw = await fetchGenres(client);
+        setFallbackGenres(
+          raw.map((g) => ({
+            name: g.value,
+            songCount: g.songCount ?? 0,
+            albumCount: g.albumCount ?? 0,
+          })),
+        );
+      } catch (e) {
+        /* best-effort */
+      }
+    }
+    load();
+  }, [library.genres]);
+
   const genres = useMemo(
-    () => [...library.genres].sort((a, b) => b.songCount - a.songCount),
-    [library.genres],
+    () =>
+      [...(fallbackGenres ?? [])].sort(
+        (a, b) => (b.songCount ?? 0) - (a.songCount ?? 0),
+      ),
+    [fallbackGenres],
   );
 
   return (
@@ -72,16 +109,13 @@ export default function GenresScreen() {
                 <GenreCardSkeleton key={`skeleton-${index}`} />
               ))
             : genres.map((genre) => (
-                <Pressable
+                <GenreCard
                   key={genre.name}
-                  style={styles.genreCard}
+                  name={genre.name}
+                  songCount={genre.songCount}
+                  albumCount={genre.albumCount}
                   onPress={() => openGenre(router, genre.name)}
-                >
-                  <Text style={styles.genreCardTitle}>{genre.name}</Text>
-                  <Text style={styles.genreCardSubtitle} numberOfLines={2}>
-                    {genre.songCount} songs · {genre.albumCount} albums
-                  </Text>
-                </Pressable>
+                />
               ))}
         </View>
 

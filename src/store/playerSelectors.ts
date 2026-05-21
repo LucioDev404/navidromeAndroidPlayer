@@ -93,3 +93,11 @@ export function useIsPlaylistQueue(playlistId: string): boolean {
       s.queueContext?.type === "playlist" && s.queueContext.id === playlistId,
   );
 }
+
+export function useIsGenreQueue(genreName: string): boolean {
+  return usePlayerStore(
+    (s) =>
+      s.queueContext?.type === "genre" &&
+      s.queueContext.id === `genre:${genreName}`,
+  );
+}

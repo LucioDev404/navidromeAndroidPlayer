@@ -44,9 +44,11 @@ function FullPlayerContentComponent() {
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled
       >
-        <PlayerTrackHeader song={currentSong} artSize={320} />
-        <SeekBar />
-        <PlayerControls size="lg" />
+        <View style={styles.sectionCard}>
+          <PlayerTrackHeader song={currentSong} artSize={320} />
+          <SeekBar />
+          <PlayerControls size="lg" />
+        </View>
 
         {playbackError ? (
           <View style={styles.errorBox}>
@@ -58,9 +60,7 @@ function FullPlayerContentComponent() {
         ) : null}
 
         {status === "buffering" || status === "loading" ? (
-          <Text style={styles.statusHint}>
-            Buffering stream from Navidrome…
-          </Text>
+          <Text style={styles.statusHint}>Buffering from Navidrome…</Text>
         ) : null}
 
         <QueueList queue={queue} />
@@ -83,6 +83,15 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: authSpacing.xl,
+    paddingHorizontal: authSpacing.lg,
+  },
+  sectionCard: {
+    borderRadius: authSpacing.xl,
+    backgroundColor: authColors.surface,
+    padding: authSpacing.lg,
+    marginHorizontal: -authSpacing.lg,
+    marginBottom: authSpacing.lg,
+    overflow: "hidden",
   },
   empty: {
     flex: 1,

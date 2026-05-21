@@ -29,9 +29,18 @@ function QueueRow({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.row, isActive && styles.rowActive]}
+      style={({ pressed }) => [
+        styles.row,
+        isActive && styles.rowActive,
+        pressed && styles.rowPressed,
+      ]}
     >
-      <CachedCover uri={item.coverArtUrl} size={44} borderRadius={6} />
+      {isActive ? (
+        <View style={styles.indicator} />
+      ) : (
+        <View style={styles.indicatorPlaceholder} />
+      )}
+      <CachedCover uri={item.coverArtUrl} size={44} borderRadius={8} />
       <View style={styles.meta}>
         <Text
           style={[styles.title, isActive && styles.titleActive]}
@@ -75,24 +84,28 @@ function QueueListComponent({
 
   return (
     <View style={[styles.wrap, embeddedInScrollView && styles.wrapEmbedded]}>
-      <Text style={styles.heading}>Queue · {queue.length} tracks</Text>
-      <FlatList
-        data={queue}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        scrollEnabled={!embeddedInScrollView}
-        nestedScrollEnabled={!embeddedInScrollView}
-        style={[styles.list, embeddedInScrollView && styles.listEmbedded]}
-        initialNumToRender={10}
-        maxToRenderPerBatch={14}
-        windowSize={6}
-        getItemLayout={(_, index) => ({
-          length: ROW_HEIGHT,
-          offset: ROW_HEIGHT * index,
-          index,
-        })}
-        ItemSeparatorComponent={Separator}
-      />
+      <Text style={styles.heading}>Up next</Text>
+      <Text style={styles.subheading}>{queue.length} tracks in queue</Text>
+      <View style={styles.queueCard}>
+        <FlatList
+          data={queue}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          scrollEnabled={!embeddedInScrollView}
+          nestedScrollEnabled={!embeddedInScrollView}
+          style={[styles.list, embeddedInScrollView && styles.listEmbedded]}
+          contentContainerStyle={styles.listContent}
+          initialNumToRender={10}
+          maxToRenderPerBatch={14}
+          windowSize={6}
+          getItemLayout={(_, index) => ({
+            length: ROW_HEIGHT,
+            offset: ROW_HEIGHT * index,
+            index,
+          })}
+          ItemSeparatorComponent={Separator}
+        />
+      </View>
     </View>
   );
 }
@@ -116,21 +129,33 @@ const styles = StyleSheet.create({
   listEmbedded: {
     flexGrow: 1,
   },
-  heading: {
-    color: authColors.textPrimary,
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: authSpacing.sm,
-  },
   row: {
     height: ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: authSpacing.sm,
-    borderRadius: 8,
+    paddingHorizontal: authSpacing.md,
+    borderRadius: 12,
+    backgroundColor: authColors.surface,
   },
   rowActive: {
-    backgroundColor: "rgba(29,185,84,0.12)",
+    backgroundColor: "rgba(29,185,84,0.16)",
+    borderColor: authColors.accent,
+    borderWidth: 1,
+  },
+  rowPressed: {
+    opacity: 0.7,
+  },
+  indicator: {
+    width: 4,
+    height: 32,
+    borderRadius: 999,
+    backgroundColor: authColors.accent,
+    marginRight: authSpacing.sm,
+  },
+  indicatorPlaceholder: {
+    width: 4,
+    height: 32,
+    marginRight: authSpacing.sm,
   },
   meta: {
     flex: 1,
@@ -148,6 +173,27 @@ const styles = StyleSheet.create({
     color: authColors.textSecondary,
     fontSize: 13,
     marginTop: 2,
+  },
+  queueCard: {
+    borderRadius: 0,
+    backgroundColor: "transparent",
+    overflow: "hidden",
+    borderWidth: 0,
+  },
+  listContent: {
+    paddingBottom:
+      authSpacing.xl + authSpacing.lg + authSpacing.md + authSpacing.sm,
+  },
+  heading: {
+    color: authColors.textPrimary,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: authSpacing.xs,
+  },
+  subheading: {
+    color: authColors.textSecondary,
+    fontSize: 13,
+    marginBottom: authSpacing.sm,
   },
   separator: {
     height: 4,

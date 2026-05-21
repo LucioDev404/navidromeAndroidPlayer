@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useCallback } from "react";
 import {
@@ -16,9 +17,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
 import { MediaCarousel } from "../../src/components/library/MediaCarousel";
 import { CachedCover } from "../../src/components/ui/CachedCover";
-import { usePlayerActions } from "../../src/store/playerSelectors";
+import {
+  useIsGenreQueue,
+  usePlayerActions,
+} from "../../src/store/playerSelectors";
 import useLibraryStore from "../../src/store/useLibraryStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
+import { genreGradient } from "../../src/utils/genreColors";
 
 if (
   Platform.OS === "android" &&
@@ -59,6 +64,11 @@ export default function GenreDetailScreen() {
   const isLoading = useLibraryStore((s) => s.isLoading);
   const isHydrated = useLibraryStore((s) => s.isHydrated);
   const { playSong, playQueue } = usePlayerActions();
+  const isCurrentGenreQueue = useIsGenreQueue(
+    decodeURIComponent(
+      Array.isArray(params.name ?? "") ? params.name[0] : (params.name ?? ""),
+    ).trim(),
+  );
 
   const genreNameRaw = params.name ?? "";
   const genreName = decodeURIComponent(
@@ -170,7 +180,7 @@ export default function GenreDetailScreen() {
         item,
         filteredSongs,
         {
-          type: "library",
+          type: "genre",
           id: `genre:${genreName}`,
           title: genreName,
         },
@@ -183,7 +193,7 @@ export default function GenreDetailScreen() {
   const handlePlayAll = useCallback(() => {
     if (!filteredSongs || filteredSongs.length === 0) return;
     playQueue(filteredSongs, 0, {
-      type: "library",
+      type: "genre",
       id: `genre:${genreName}`,
       title: genreName,
     });
@@ -192,6 +202,9 @@ export default function GenreDetailScreen() {
   if (!genreName) {
     return null;
   }
+
+  const heroCover = topAlbums[0]?.coverArtUrl ?? topSongs[0]?.coverArtUrl;
+  const gradientColors = genreGradient(genreName);
 
   return (
     <AuthGradientBackground>
@@ -203,6 +216,23 @@ export default function GenreDetailScreen() {
           paddingHorizontal: authSpacing.lg,
         }}
       >
+        <LinearGradient colors={gradientColors} style={styles.hero}>
+          <View style={styles.heroInner}>
+            <View style={styles.heroTitleBlock}>
+              <Text style={styles.heroLabel}>Genre</Text>
+              <Text style={styles.heroTitle} numberOfLines={1}>
+                {genreName}
+              </Text>
+              <Text style={styles.heroSubtitle} numberOfLines={1}>
+                {filteredSongs.length} songs · {filteredAlbums.length} albums
+              </Text>
+              {isCurrentGenreQueue ? (
+                <Text style={styles.heroBadge}>Playing now</Text>
+              ) : null}
+            </View>
+            <CachedCover uri={heroCover} size={96} borderRadius={12} />
+          </View>
+        </LinearGradient>
         <View style={styles.headerRow}>
           <View style={styles.titleBlock}>
             <Text style={styles.genreLabel}>Genre</Text>
@@ -357,6 +387,51 @@ const styles = StyleSheet.create({
   playButtonText: {
     color: authColors.surface,
     fontWeight: "800",
+  },
+  hero: {
+    height: 140,
+    borderRadius: authSpacing.lg,
+    marginBottom: authSpacing.md,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  heroInner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: authSpacing.md,
+  },
+  heroTitleBlock: {
+    flex: 1,
+    paddingRight: authSpacing.sm,
+  },
+  heroLabel: {
+    color: authColors.surface,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginBottom: authSpacing.xs,
+    opacity: 0.95,
+  },
+  heroTitle: {
+    color: authColors.surface,
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: authSpacing.xs,
+  },
+  heroSubtitle: {
+    color: authColors.surface,
+    opacity: 0.95,
+    fontSize: 13,
+  },
+  heroBadge: {
+    color: authColors.surface,
+    marginTop: authSpacing.xs,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    opacity: 0.95,
   },
   loadingState: {
     padding: authSpacing.lg,

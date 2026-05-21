@@ -1,6 +1,6 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
-  Image,
+  Animated,
   StyleSheet,
   View,
   type ImageStyle,
@@ -23,6 +23,19 @@ function CachedCoverComponent({
   style,
 }: CachedCoverProps) {
   const source = useMemo(() => (uri ? { uri } : null), [uri]);
+  const [opacity] = useState(() => new Animated.Value(0));
+
+  const onLoad = () => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  useEffect(() => {
+    opacity.setValue(0);
+  }, [source, opacity]);
 
   if (!source) {
     return (
@@ -37,9 +50,10 @@ function CachedCoverComponent({
   }
 
   return (
-    <Image
+    <Animated.Image
       source={source}
-      style={[{ width: size, height: size, borderRadius }, style]}
+      onLoad={onLoad}
+      style={[{ width: size, height: size, borderRadius, opacity }, style]}
       resizeMode="cover"
     />
   );

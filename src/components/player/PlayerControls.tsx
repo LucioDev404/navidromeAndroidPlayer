@@ -47,76 +47,78 @@ function PlayerControlsComponent({ size = "md" }: PlayerControlsProps) {
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.secondaryRow}>
-        <Pressable
-          onPress={toggleShuffle}
-          accessibilityLabel="Toggle shuffle"
-          style={styles.secondaryButton}
-        >
-          <Ionicons
-            name="shuffle"
-            size={22}
-            color={shuffleEnabled ? authColors.accent : authColors.textMuted}
-          />
-        </Pressable>
-        <Pressable
-          onPress={cycleRepeatMode}
-          accessibilityLabel="Cycle repeat mode"
-          style={styles.secondaryButton}
-        >
-          <Ionicons
-            name={repeatIcon(repeatMode)}
-            size={22}
-            color={
-              repeatMode !== "off" ? authColors.accent : authColors.textMuted
-            }
-          />
-          {repeatMode === "one" ? (
-            <Text style={styles.repeatOne}>1</Text>
-          ) : null}
-        </Pressable>
-      </View>
-
-      <View style={styles.row}>
-        <Pressable
-          onPress={playPrevious}
-          accessibilityLabel="Previous track"
-          style={styles.side}
-        >
-          <Ionicons
-            name="play-skip-back"
-            size={sideIconSize}
-            color={authColors.textPrimary}
-          />
-        </Pressable>
-
-        <Pressable
-          onPress={togglePlay}
-          accessibilityLabel={isPlaying ? "Pause" : "Play"}
-          style={styles.center}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="large" color={authColors.accent} />
-          ) : (
+      <View style={styles.controlCard}>
+        <View style={styles.secondaryRow}>
+          <Pressable
+            onPress={toggleShuffle}
+            accessibilityLabel="Toggle shuffle"
+            style={styles.secondaryButton}
+          >
             <Ionicons
-              name={isPlaying ? "pause-circle" : "play-circle"}
-              size={playIconSize}
-              color={authColors.accent}
+              name="shuffle"
+              size={22}
+              color={shuffleEnabled ? authColors.accent : authColors.textMuted}
             />
-          )}
-        </Pressable>
+          </Pressable>
+          <Pressable
+            onPress={cycleRepeatMode}
+            accessibilityLabel="Cycle repeat mode"
+            style={styles.secondaryButton}
+          >
+            <Ionicons
+              name={repeatIcon(repeatMode)}
+              size={22}
+              color={
+                repeatMode !== "off" ? authColors.accent : authColors.textMuted
+              }
+            />
+            {repeatMode === "one" ? (
+              <Text style={styles.repeatOne}>1</Text>
+            ) : null}
+          </Pressable>
+        </View>
 
-        <Pressable
-          onPress={playNext}
-          accessibilityLabel="Next track"
-          style={styles.side}
-        >
-          <Ionicons
-            name="play-skip-forward"
-            size={skipIconSize}
-            color={authColors.textPrimary}
-          />
-        </Pressable>
+        <View style={styles.row}>
+          <Pressable
+            onPress={playPrevious}
+            accessibilityLabel="Previous track"
+            style={styles.side}
+          >
+            <Ionicons
+              name="play-skip-back"
+              size={sideIconSize}
+              color={authColors.textPrimary}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={togglePlay}
+            accessibilityLabel={isPlaying ? "Pause" : "Play"}
+            style={styles.center}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="large" color={authColors.accent} />
+            ) : (
+              <Ionicons
+                name={isPlaying ? "pause-circle" : "play-circle"}
+                size={playIconSize}
+                color={authColors.accent}
+              />
+            )}
+          </Pressable>
+
+          <Pressable
+            onPress={playNext}
+            accessibilityLabel="Next track"
+            style={styles.side}
+          >
+            <Ionicons
+              name="play-skip-forward"
+              size={skipIconSize}
+              color={authColors.textPrimary}
+            />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -126,6 +128,16 @@ const styles = StyleSheet.create({
   wrap: {
     marginBottom: authSpacing.lg,
   },
+  controlCard: {
+    backgroundColor: authColors.surface,
+    borderRadius: authSpacing.xl,
+    padding: authSpacing.lg,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 6,
+  },
   secondaryRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -133,18 +145,11 @@ const styles = StyleSheet.create({
     marginBottom: authSpacing.sm,
   },
   secondaryButton: {
-    padding: authSpacing.xs,
-    minWidth: 40,
+    padding: authSpacing.sm,
+    minWidth: 48,
     alignItems: "center",
     justifyContent: "center",
-  },
-  repeatOne: {
-    position: "absolute",
-    right: 2,
-    bottom: 0,
-    color: authColors.accent,
-    fontSize: 9,
-    fontWeight: "800",
+    borderRadius: 999,
   },
   row: {
     flexDirection: "row",
@@ -161,6 +166,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minWidth: 80,
+  },
+  repeatOne: {
+    position: "absolute",
+    right: 2,
+    bottom: 0,
+    color: authColors.accent,
+    fontSize: 9,
+    fontWeight: "800",
   },
 });
 
