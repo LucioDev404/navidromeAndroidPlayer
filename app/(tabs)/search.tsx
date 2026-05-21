@@ -1,17 +1,15 @@
 import { useRouter } from "expo-router";
-import { memo, useEffect, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import {
-  LayoutAnimation,
-  Platform,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  UIManager,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { shallow } from "zustand/shallow";
 
 import { AuthGradientBackground } from "../../src/components/auth/AuthGradientBackground";
 import { CachedCover } from "../../src/components/ui/CachedCover";
@@ -27,13 +25,6 @@ import { useIsAuthenticated } from "../../src/store/useAuthStore";
 import { useSearchStore } from "../../src/store/useSearchStore";
 import { authColors, authSpacing } from "../../src/theme/authTheme";
 
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 type SearchResult = {
   key: string;
   title: string;
@@ -42,6 +33,36 @@ type SearchResult = {
   category: string;
   onPress: () => void;
 };
+
+type SearchListItem =
+  | {
+      type: "top-result";
+      key: string;
+      title: string;
+      subtitle: string;
+      coverUrl?: string;
+      category: string;
+      onPress: () => void;
+    }
+  | {
+      type: "section-header";
+      key: string;
+      title: string;
+      count: number;
+    }
+  | {
+      type: "result";
+      key: string;
+      title: string;
+      subtitle: string;
+      coverUrl?: string;
+      onPress: () => void;
+    }
+  | {
+      type: "section-empty";
+      key: string;
+      message: string;
+    };
 
 const ResultRow = memo(function ResultRow({
   title,
@@ -79,6 +100,34 @@ const SectionHeader = memo(function SectionHeader({
   );
 });
 
+const TopResultCard = memo(function TopResultCard({
+  title,
+  subtitle,
+  coverUrl,
+  category,
+  onPress,
+}: Omit<SearchResult, "key">) {
+  return (
+    <View style={styles.topResultCard}>
+      <Text style={styles.topSectionLabel}>Top result</Text>
+      <Pressable style={styles.topCardContent} onPress={onPress}>
+        <CachedCover uri={coverUrl} size={120} borderRadius={18} />
+        <View style={styles.topCardText}>
+          <Text style={styles.topCardTitle} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={styles.topCardSubtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+          <View style={styles.topCardBadge}>
+            <Text style={styles.topCardBadgeText}>{category}</Text>
+          </View>
+        </View>
+      </Pressable>
+    </View>
+  );
+});
+
 const SkeletonCard = memo(function SkeletonCard() {
   return (
     <View style={styles.skeletonCard}>
@@ -107,31 +156,35 @@ export default function SearchTabScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useIsAuthenticated();
-  const query = useSearchStore((s) => s.query);
-  const setQuery = useSearchStore((s) => s.setQuery);
-  const clear = useSearchStore((s) => s.clear);
-  const isSearching = useSearchStore((s) => s.isSearching);
-  const lastError = useSearchStore((s) => s.lastError);
-  const artists = useSearchStore((s) => s.artists);
-  const albums = useSearchStore((s) => s.albums);
-  const songs = useSearchStore((s) => s.songs);
-  const playlists = useSearchStore((s) => s.playlists);
-  const genres = useSearchStore((s) => s.genres);
+  const {
+    query,
+    setQuery,
+    clear,
+    isSearching,
+    lastError,
+    artists,
+    albums,
+    songs,
+    playlists,
+    genres,
+  } = useSearchStore(
+    (s) => ({
+      query: s.query,
+      setQuery: s.setQuery,
+      clear: s.clear,
+      isSearching: s.isSearching,
+      lastError: s.lastError,
+      artists: s.artists,
+      albums: s.albums,
+      songs: s.songs,
+      playlists: s.playlists,
+      genres: s.genres,
+    }),
+    shallow,
+  );
   const { playSong } = usePlayerActions();
 
   useEffect(() => () => clear(), [clear]);
-
-  useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [
-    query,
-    isSearching,
-    songs.length,
-    albums.length,
-    artists.length,
-    playlists.length,
-    genres.length,
-  ]);
 
   const searchContext = useMemo(
     () => ({ type: "search" as const, title: "Search" }),
@@ -155,6 +208,7 @@ export default function SearchTabScreen() {
     if (songs.length > 0) {
       const item = songs[0];
       return {
+        type: "top-result" as const,
         key: `top-song-${item.id}`,
         title: item.title,
         subtitle: `${item.artist} · ${item.album}`,
@@ -167,6 +221,7 @@ export default function SearchTabScreen() {
     if (albums.length > 0) {
       const item = albums[0];
       return {
+        type: "top-result" as const,
         key: `top-album-${item.id}`,
         title: item.title,
         subtitle: item.artist,
@@ -179,6 +234,7 @@ export default function SearchTabScreen() {
     if (artists.length > 0) {
       const item = artists[0];
       return {
+        type: "top-result" as const,
         key: `top-artist-${item.id}`,
         title: item.name,
         subtitle: `${item.albumCount} albums`,
@@ -191,6 +247,7 @@ export default function SearchTabScreen() {
     if (playlists.length > 0) {
       const item = playlists[0];
       return {
+        type: "top-result" as const,
         key: `top-playlist-${item.id}`,
         title: item.name,
         subtitle: `${item.songCount} songs`,
@@ -203,6 +260,7 @@ export default function SearchTabScreen() {
     if (genres.length > 0) {
       const item = genres[0];
       return {
+        type: "top-result" as const,
         key: `top-genre-${item.name}`,
         title: item.name,
         subtitle: `${item.songCount} songs · ${item.albumCount} albums`,
@@ -233,6 +291,169 @@ export default function SearchTabScreen() {
   const playlistsPreview = useMemo(() => playlists.slice(0, 4), [playlists]);
   const genresPreview = useMemo(() => genres.slice(0, 5), [genres]);
 
+  const resultItems = useMemo<SearchListItem[]>(() => {
+    if (!hasQuery || isSearching) {
+      return [];
+    }
+
+    const items: SearchListItem[] = [];
+
+    if (topResult) {
+      items.push(topResult);
+    }
+
+    const appendSection = (
+      title: string,
+      count: number,
+      preview: Array<{
+        id: string;
+        title: string;
+        subtitle: string;
+        coverUrl?: string;
+        onPress: () => void;
+      }>,
+      emptyMessage: string,
+    ) => {
+      items.push({
+        type: "section-header",
+        key: `section-${title}`,
+        title,
+        count,
+      });
+
+      if (preview.length > 0) {
+        preview.forEach((item) => {
+          items.push({
+            type: "result",
+            key: `${title.toLowerCase()}-${item.id}`,
+            title: item.title,
+            subtitle: item.subtitle,
+            coverUrl: item.coverUrl,
+            onPress: item.onPress,
+          });
+        });
+      } else {
+        items.push({
+          type: "section-empty",
+          key: `empty-${title}`,
+          message: emptyMessage,
+        });
+      }
+    };
+
+    appendSection(
+      "Songs",
+      songs.length,
+      songsPreview.map((item, index) => ({
+        id: item.id,
+        title: item.title,
+        subtitle: `${item.artist} · ${item.album}`,
+        coverUrl: item.coverArtUrl,
+        onPress: () => playSong(item, songs, searchContext, index),
+      })),
+      "No songs match this search.",
+    );
+
+    appendSection(
+      "Albums",
+      albums.length,
+      albumsPreview.map((item) => ({
+        id: item.id,
+        title: item.title,
+        subtitle: item.artist,
+        coverUrl: item.coverArtUrl,
+        onPress: () => openAlbum(router, item.id),
+      })),
+      "No albums match this search.",
+    );
+
+    appendSection(
+      "Artists",
+      artists.length,
+      artistsPreview.map((item) => ({
+        id: item.id,
+        title: item.name,
+        subtitle: `${item.albumCount} albums`,
+        coverUrl: item.coverArtUrl,
+        onPress: () => openArtist(router, item.id),
+      })),
+      "No artists match this search.",
+    );
+
+    appendSection(
+      "Playlists",
+      playlists.length,
+      playlistsPreview.map((item) => ({
+        id: item.id,
+        title: item.name,
+        subtitle: `${item.songCount} songs`,
+        coverUrl: item.coverArtUrl,
+        onPress: () => openPlaylist(router, item.id),
+      })),
+      "No playlists match this search.",
+    );
+
+    appendSection(
+      "Genres",
+      genres.length,
+      genresPreview.map((item) => ({
+        id: item.name,
+        title: item.name,
+        subtitle: `${item.songCount} songs`,
+        coverUrl: undefined,
+        onPress: () => openGenre(router, item.name),
+      })),
+      "No genres match this search.",
+    );
+
+    return items;
+  }, [
+    albums.length,
+    albumsPreview,
+    artists.length,
+    artistsPreview,
+    genres.length,
+    genresPreview,
+    hasQuery,
+    isSearching,
+    playSong,
+    searchContext,
+    songs,
+    songsPreview,
+    playlists.length,
+    playlistsPreview,
+    router,
+    topResult,
+  ]);
+
+  const renderSearchItem = useCallback(({ item }: { item: SearchListItem }) => {
+    switch (item.type) {
+      case "top-result":
+        return (
+          <TopResultCard
+            title={item.title}
+            subtitle={item.subtitle}
+            coverUrl={item.coverUrl}
+            category={item.category}
+            onPress={item.onPress}
+          />
+        );
+      case "section-header":
+        return <SectionHeader title={item.title} count={item.count} />;
+      case "result":
+        return (
+          <ResultRow
+            title={item.title}
+            subtitle={item.subtitle}
+            coverUrl={item.coverUrl}
+            onPress={item.onPress}
+          />
+        );
+      case "section-empty":
+        return <SectionEmpty message={item.message} />;
+    }
+  }, []);
+
   const bottomInset = useMemo(
     () => getScrollBottomInset(insets.bottom, { hasMiniPlayer: true }),
     [insets.bottom],
@@ -241,6 +462,12 @@ export default function SearchTabScreen() {
   if (!isAuthenticated) {
     return null;
   }
+
+  const skeletonItems = useMemo(
+    () =>
+      Array.from({ length: 3 }, (_, index) => ({ key: `skeleton-${index}` })),
+    [],
+  );
 
   return (
     <AuthGradientBackground>
@@ -286,159 +513,44 @@ export default function SearchTabScreen() {
 
         {lastError ? <Text style={styles.error}>{lastError}</Text> : null}
 
-        <ScrollView
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {isSearching ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : !hasQuery ? (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateTitle}>
-                Search premium discovery.
-              </Text>
-              <Text style={styles.emptyStateSubtitle}>
-                Use filters and fast results to jump directly to the music you
-                want.
-              </Text>
-            </View>
-          ) : totalResults === 0 ? (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateTitle}>No matches found</Text>
-              <Text style={styles.emptyStateSubtitle}>
-                We couldn’t find anything for “{normalizedQuery}”. Try a broader
-                keyword.
-              </Text>
-            </View>
-          ) : (
-            <>
-              {topResult ? (
-                <View style={styles.topResultCard}>
-                  <Text style={styles.topSectionLabel}>Top result</Text>
-                  <Pressable
-                    style={styles.topCardContent}
-                    onPress={topResult.onPress}
-                  >
-                    <CachedCover
-                      uri={topResult.coverUrl}
-                      size={120}
-                      borderRadius={18}
-                    />
-                    <View style={styles.topCardText}>
-                      <Text style={styles.topCardTitle} numberOfLines={2}>
-                        {topResult.title}
-                      </Text>
-                      <Text style={styles.topCardSubtitle} numberOfLines={1}>
-                        {topResult.subtitle}
-                      </Text>
-                      <View style={styles.topCardBadge}>
-                        <Text style={styles.topCardBadgeText}>
-                          {topResult.category}
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                </View>
-              ) : null}
-
-              <View style={styles.sectionBlock}>
-                <SectionHeader title="Songs" count={songs.length} />
-                {songsPreview.length > 0 ? (
-                  songsPreview.map((item, index) => (
-                    <ResultRow
-                      key={`song-${item.id}`}
-                      title={item.title}
-                      subtitle={`${item.artist} · ${item.album}`}
-                      coverUrl={item.coverArtUrl}
-                      onPress={() =>
-                        playSong(item, songs, searchContext, index)
-                      }
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty message="No songs match this search." />
-                )}
-              </View>
-
-              <View style={styles.sectionBlock}>
-                <SectionHeader title="Albums" count={albums.length} />
-                {albumsPreview.length > 0 ? (
-                  albumsPreview.map((item) => (
-                    <ResultRow
-                      key={`album-${item.id}`}
-                      title={item.title}
-                      subtitle={item.artist}
-                      coverUrl={item.coverArtUrl}
-                      onPress={() => openAlbum(router, item.id)}
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty message="No albums match this search." />
-                )}
-              </View>
-
-              <View style={styles.sectionBlock}>
-                <SectionHeader title="Artists" count={artists.length} />
-                {artistsPreview.length > 0 ? (
-                  artistsPreview.map((item) => (
-                    <ResultRow
-                      key={`artist-${item.id}`}
-                      title={item.name}
-                      subtitle={`${item.albumCount} albums`}
-                      coverUrl={item.coverArtUrl}
-                      onPress={() => openArtist(router, item.id)}
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty message="No artists match this search." />
-                )}
-              </View>
-
-              <View style={styles.sectionBlock}>
-                <SectionHeader title="Playlists" count={playlists.length} />
-                {playlistsPreview.length > 0 ? (
-                  playlistsPreview.map((item) => (
-                    <ResultRow
-                      key={`playlist-${item.id}`}
-                      title={item.name}
-                      subtitle={`${item.songCount} songs`}
-                      coverUrl={item.coverArtUrl}
-                      onPress={() => openPlaylist(router, item.id)}
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty message="No playlists match this search." />
-                )}
-              </View>
-
-              <View style={styles.sectionBlock}>
-                <SectionHeader title="Genres" count={genres.length} />
-                {genresPreview.length > 0 ? (
-                  <View style={styles.genreGrid}>
-                    {genresPreview.map((item) => (
-                      <Pressable
-                        key={`genre-${item.name}`}
-                        style={styles.genreChip}
-                        onPress={() => openGenre(router, item.name)}
-                      >
-                        <Text style={styles.genreChipText}>{item.name}</Text>
-                        <Text style={styles.genreChipCount}>
-                          {item.songCount} songs
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                ) : (
-                  <SectionEmpty message="No genres match this search." />
-                )}
-              </View>
-            </>
-          )}
-        </ScrollView>
+        {isSearching ? (
+          <FlatList
+            data={skeletonItems}
+            keyExtractor={(item) => item.key}
+            renderItem={() => <SkeletonCard />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.contentContainer}
+          />
+        ) : !hasQuery ? (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateTitle}>
+              Search premium discovery.
+            </Text>
+            <Text style={styles.emptyStateSubtitle}>
+              Use filters and fast results to jump directly to the music you
+              want.
+            </Text>
+          </View>
+        ) : totalResults === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateTitle}>No matches found</Text>
+            <Text style={styles.emptyStateSubtitle}>
+              We couldn’t find anything for “{normalizedQuery}”. Try a broader
+              keyword.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={resultItems}
+            keyExtractor={(item) => item.key}
+            renderItem={renderSearchItem}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={12}
+            windowSize={8}
+            contentContainerStyle={styles.contentContainer}
+          />
+        )}
       </View>
     </AuthGradientBackground>
   );
@@ -559,9 +671,6 @@ const styles = StyleSheet.create({
     color: authColors.accent,
     fontSize: 11,
     fontWeight: "700",
-  },
-  sectionBlock: {
-    marginBottom: authSpacing.lg,
   },
   sectionHeader: {
     flexDirection: "row",

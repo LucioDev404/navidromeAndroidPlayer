@@ -56,7 +56,13 @@ function QueueRow({
   );
 }
 
-const MemoQueueRow = memo(QueueRow);
+const MemoQueueRow = memo(
+  QueueRow,
+  (prev, next) =>
+    prev.item.id === next.item.id &&
+    prev.isActive === next.isActive &&
+    prev.onPress === next.onPress,
+);
 
 function QueueListComponent({
   queue,

@@ -64,16 +64,12 @@ export default function GenreDetailScreen() {
   const isLoading = useLibraryStore((s) => s.isLoading);
   const isHydrated = useLibraryStore((s) => s.isHydrated);
   const { playSong, playQueue } = usePlayerActions();
-  const isCurrentGenreQueue = useIsGenreQueue(
-    decodeURIComponent(
-      Array.isArray(params.name ?? "") ? params.name[0] : (params.name ?? ""),
-    ).trim(),
-  );
-
-  const genreNameRaw = params.name ?? "";
-  const genreName = decodeURIComponent(
-    Array.isArray(genreNameRaw) ? genreNameRaw[0] : genreNameRaw,
-  ).trim();
+  const rawGenreName = params.name;
+  const genreNameRaw = Array.isArray(rawGenreName)
+    ? rawGenreName[0]
+    : (rawGenreName ?? "");
+  const genreName = decodeURIComponent(genreNameRaw).trim();
+  const isCurrentGenreQueue = useIsGenreQueue(genreName);
 
   useEffect(() => {
     if (!isHydrated) {

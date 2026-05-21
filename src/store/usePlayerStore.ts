@@ -113,10 +113,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   patchPlayback: (patch) => {
-    set((state) => ({
-      ...state,
-      ...patch,
-    }));
+    set(patch);
   },
 
   resetPlayback: () => {

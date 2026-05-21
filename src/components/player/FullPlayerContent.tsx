@@ -8,16 +8,16 @@ import { QueueList } from "./QueueList";
 import { SeekBar } from "./SeekBar";
 import {
   useCurrentSong,
+  usePlayerQueue,
   usePlaybackError,
   usePlaybackStatus,
   usePlayerActions,
 } from "../../store/playerSelectors";
-import { usePlayerStore } from "../../store/usePlayerStore";
 import { authColors, authSpacing } from "../../theme/authTheme";
 
 function FullPlayerContentComponent() {
   const currentSong = useCurrentSong();
-  const queue = usePlayerStore((s) => s.queue);
+  const queue = usePlayerQueue();
   const playbackError = usePlaybackError();
   const status = usePlaybackStatus();
   const { retryPlayback } = usePlayerActions();

@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { fetchGenres } from "../src/api/subsonic/services/libraryService";
@@ -10,6 +10,16 @@ import { openGenre } from "../src/navigation/navigationHelpers";
 import { useEndpointStore } from "../src/store/useEndpointStore";
 import useLibraryStore from "../src/store/useLibraryStore";
 import { authColors, authSpacing } from "../src/theme/authTheme";
+
+type GenreListItem =
+  | { key: string; skeleton: true }
+  | {
+      key: string;
+      skeleton: false;
+      name: string;
+      songCount: number;
+      albumCount: number;
+    };
 
 const GenreCardSkeleton = () => (
   <View style={styles.genreCard}>
@@ -27,20 +37,19 @@ export default function GenresScreen() {
   const isHydrated = useLibraryStore((s) => s.isHydrated);
   const loadLibrary = useLibraryStore((s) => s.loadLibrary);
 
+  const [fallbackGenres, setFallbackGenres] = useState(library.genres);
+
   useEffect(() => {
     if (!isHydrated) {
       loadLibrary().catch(() => undefined);
     }
   }, [isHydrated, loadLibrary]);
 
-  const [fallbackGenres, setFallbackGenres] = useState(library.genres);
-
   useEffect(() => {
     setFallbackGenres(library.genres);
   }, [library.genres]);
 
   useEffect(() => {
-    // If library has no genres but we have a connected endpoint, try fetching getGenres directly
     async function load() {
       if ((library.genres?.length ?? 0) > 0) return;
       const endpoint = useEndpointStore.getState().getActiveEndpoint();
@@ -58,7 +67,7 @@ export default function GenresScreen() {
           })),
         );
       } catch (e) {
-        /* best-effort */
+        // best-effort fallback
       }
     }
     load();
@@ -72,16 +81,57 @@ export default function GenresScreen() {
     [fallbackGenres],
   );
 
-  return (
-    <AuthGradientBackground>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: insets.top + authSpacing.md,
-          paddingBottom: authSpacing.lg,
-          paddingHorizontal: authSpacing.lg,
-        }}
-      >
+  const genreData = useMemo<GenreListItem[]>(
+    () =>
+      isLoading && genres.length === 0
+        ? Array.from({ length: 8 }, (_, index) => ({
+            key: `skeleton-${index}`,
+            skeleton: true,
+          }))
+        : genres.map((genre) => ({
+            key: genre.name,
+            skeleton: false,
+            name: genre.name,
+            songCount: genre.songCount ?? 0,
+            albumCount: genre.albumCount ?? 0,
+          })),
+    [genres, isLoading],
+  );
+
+  const renderGenreItem = useCallback(
+    ({
+      item,
+    }: {
+      item:
+        | { key: string; skeleton: true }
+        | {
+            key: string;
+            skeleton: false;
+            name: string;
+            songCount: number;
+            albumCount: number;
+          };
+    }) => {
+      if (item.skeleton) {
+        return <GenreCardSkeleton />;
+      }
+
+      return (
+        <GenreCard
+          key={item.name}
+          name={item.name}
+          songCount={item.songCount}
+          albumCount={item.albumCount}
+          onPress={() => openGenre(router, item.name)}
+        />
+      );
+    },
+    [openGenre, router],
+  );
+
+  const renderHeader = useMemo(
+    () => (
+      <>
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Genres</Text>
@@ -102,33 +152,49 @@ export default function GenresScreen() {
           <Text style={styles.statLabel}>Genres</Text>
           <Text style={styles.statValue}>{genres.length}</Text>
         </View>
+      </>
+    ),
+    [genres.length, router],
+  );
 
-        <View style={styles.genreGrid}>
-          {isLoading && genres.length === 0
-            ? Array.from({ length: 8 }).map((_, index) => (
-                <GenreCardSkeleton key={`skeleton-${index}`} />
-              ))
-            : genres.map((genre) => (
-                <GenreCard
-                  key={genre.name}
-                  name={genre.name}
-                  songCount={genre.songCount}
-                  albumCount={genre.albumCount}
-                  onPress={() => openGenre(router, genre.name)}
-                />
-              ))}
+  const renderEmpty = useMemo(
+    () =>
+      !isLoading && genres.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No genres available</Text>
+          <Text style={styles.emptyText}>
+            Your server didn’t return any genres yet. Refresh the library in
+            Account.
+          </Text>
         </View>
+      ) : null,
+    [genres.length, isLoading],
+  );
 
-        {!isLoading && genres.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No genres available</Text>
-            <Text style={styles.emptyText}>
-              Your server didn’t return any genres yet. Refresh the library in
-              Account.
-            </Text>
-          </View>
-        ) : null}
-      </ScrollView>
+  return (
+    <AuthGradientBackground>
+      <FlatList
+        data={genreData}
+        renderItem={renderGenreItem}
+        keyExtractor={(item) => item.key}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + authSpacing.md,
+            paddingBottom: authSpacing.lg,
+            paddingHorizontal: authSpacing.lg,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderEmpty}
+        initialNumToRender={8}
+        maxToRenderPerBatch={12}
+        windowSize={6}
+        removeClippedSubviews
+      />
     </AuthGradientBackground>
   );
 }
@@ -175,11 +241,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  genreGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  content: {
+    paddingBottom: authSpacing.lg,
+  },
+  columnWrapper: {
     justifyContent: "space-between",
-    gap: authSpacing.sm,
+    marginBottom: authSpacing.sm,
   },
   genreCard: {
     width: "48%",
@@ -218,26 +285,22 @@ const styles = StyleSheet.create({
     marginBottom: authSpacing.xs,
   },
   skeletonLineLong: {
-    width: "60%",
+    width: "80%",
     height: 12,
     borderRadius: 6,
     backgroundColor: authColors.border,
   },
   emptyState: {
-    marginTop: authSpacing.xl,
-    padding: authSpacing.lg,
-    borderRadius: authSpacing.lg,
-    backgroundColor: authColors.backgroundElevated,
+    paddingTop: authSpacing.lg,
   },
   emptyTitle: {
     color: authColors.textPrimary,
     fontSize: 18,
     fontWeight: "700",
-    marginBottom: authSpacing.xs,
+    marginBottom: authSpacing.sm,
   },
   emptyText: {
     color: authColors.textSecondary,
-    fontSize: 14,
     lineHeight: 20,
   },
 });
