@@ -1,5 +1,6 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
 import Animated, {
@@ -43,6 +44,8 @@ function SeekBarComponent() {
 
   const dragX = useSharedValue(0);
 
+  const startDragX = useSharedValue(0);
+
   const isDragging = useSharedValue(false);
 
   const localProgress = useSharedValue(progress);
@@ -50,10 +53,8 @@ function SeekBarComponent() {
   const thumbScale = useSharedValue(1);
 
   /**
-   * Used to know if drag started from thumb
+   * Sync playback -> UI
    */
-  const canDrag = useSharedValue(false);
-
   useAnimatedReaction(
     () => progress,
     (p) => {
@@ -65,6 +66,9 @@ function SeekBarComponent() {
     },
   );
 
+  /**
+   * Current displayed progress
+   */
   const currentProgress = useDerivedValue(() => {
     if (isDragging.value) {
       return dragX.value / trackWidth.value;
@@ -77,76 +81,80 @@ function SeekBarComponent() {
     trackWidth.value = event.nativeEvent.layout.width;
   }, []);
 
-  const panGesture = useMemo(
-    () =>
-      Gesture.Pan()
+  /**
+   * Gesture
+   */
+  const panGesture = Gesture.Pan()
 
-        .onBegin((event) => {
-          const thumbX = currentProgress.value * trackWidth.value;
+    .hitSlop(25)
 
-          /**
-           * Allow drag ONLY if touch starts near thumb
-           */
-          const distanceFromThumb = Math.abs(event.x - thumbX);
+    .shouldCancelWhenOutside(false)
 
-          canDrag.value = distanceFromThumb <= 30;
+    .onStart(() => {
+      isDragging.value = true;
 
-          if (!canDrag.value) return;
+      cancelAnimation(localProgress);
 
-          isDragging.value = true;
+      /**
+       * Current thumb position
+       */
+      const currentX = currentProgress.value * trackWidth.value;
 
-          cancelAnimation(localProgress);
+      dragX.value = currentX;
 
-          dragX.value = thumbX;
+      startDragX.value = currentX;
 
-          thumbScale.value = withSpring(1.15, {
-            damping: 18,
-            stiffness: 220,
-          });
-        })
+      thumbScale.value = withSpring(1.15, {
+        damping: 18,
+        stiffness: 220,
+      });
+    })
 
-        .onChange((event) => {
-          if (!canDrag.value) return;
+    .onUpdate((event) => {
+      /**
+       * Relative drag from initial point
+       */
+      const nextX = startDragX.value + event.translationX;
 
-          dragX.value = Math.min(
-            Math.max(dragX.value + event.changeX, 0),
-            trackWidth.value,
-          );
-        })
+      dragX.value = Math.min(Math.max(nextX, 0), trackWidth.value);
+    })
 
-        .onEnd(() => {
-          if (!canDrag.value) return;
+    .onFinalize(() => {
+      const ratio = dragX.value / trackWidth.value;
 
-          const ratio = dragX.value / trackWidth.value;
+      const newPosition = Math.floor(ratio * max);
 
-          const newPosition = Math.floor(ratio * max);
+      runOnJS(seekTo)(newPosition);
 
-          runOnJS(seekTo)(newPosition);
+      /**
+       * Prevent release glitch
+       */
+      localProgress.value = withTiming(ratio, {
+        duration: 150,
+      });
 
-          localProgress.value = withTiming(ratio, {
-            duration: 150,
-          });
+      thumbScale.value = withSpring(1, {
+        damping: 18,
+        stiffness: 220,
+      });
 
-          thumbScale.value = withSpring(1, {
-            damping: 18,
-            stiffness: 220,
-          });
+      setTimeout(() => {
+        isDragging.value = false;
+      }, 150);
+    });
 
-          setTimeout(() => {
-            isDragging.value = false;
-          }, 150);
-
-          canDrag.value = false;
-        }),
-    [max, seekTo],
-  );
-
+  /**
+   * Fill
+   */
   const fillAnimatedStyle = useAnimatedStyle(() => {
     return {
       width: currentProgress.value * trackWidth.value,
     };
   });
 
+  /**
+   * Thumb
+   */
   const thumbAnimatedStyle = useAnimatedStyle(() => {
     const x = currentProgress.value * trackWidth.value;
 
@@ -166,17 +174,17 @@ function SeekBarComponent() {
 
   return (
     <View style={styles.wrap}>
-      <GestureDetector gesture={panGesture}>
-        <Animated.View onLayout={onLayout} style={styles.trackContainer}>
-          {/* Track */}
-          <View style={styles.track}>
-            <Animated.View style={[styles.fill, fillAnimatedStyle]} />
-          </View>
+      <Animated.View onLayout={onLayout} style={styles.trackContainer}>
+        {/* Track */}
+        <View style={styles.track}>
+          <Animated.View style={[styles.fill, fillAnimatedStyle]} />
+        </View>
 
-          {/* Thumb */}
+        {/* Thumb */}
+        <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.thumb, thumbAnimatedStyle]} />
-        </Animated.View>
-      </GestureDetector>
+        </GestureDetector>
+      </Animated.View>
 
       {/* Labels */}
       <View style={styles.labels}>
